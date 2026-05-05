@@ -8,6 +8,7 @@ import VisWorkflowWheel from '@/components/vis-workflow-wheel';
 import FeaturesGrid from '@/components/features-grid';
 import StatsSection from '@/components/stats-section';
 import PlatformSection from '@/components/platform-section';
+import BuildSection from '@/components/build-section';
 
 export default function HomePage() {
   return (
@@ -22,6 +23,7 @@ export default function HomePage() {
       </div>
       <StatsSection />
       <PlatformSection />
+      <BuildSection />
     </main>
   );
 }
