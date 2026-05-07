@@ -52,7 +52,7 @@ export default function ModelSection() {
     <section
       ref={sectionRef}
       id='model'
-      className='flex flex-col items-center bg-white pt-[15vh] pb-[120px]'
+      className='flex flex-col items-center bg-white pt-[15vh] pb-[120px] scroll-mt-24'
       style={{ paddingRight: 'clamp(32px, 5vw, 100px)', paddingLeft: 'clamp(80px, 15vw, 280px)' }}
     >
       <div className='w-full max-w-[1200px] mx-auto'>

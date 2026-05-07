@@ -92,7 +92,7 @@ export default function FAQSection() {
   }, { scope: containerRef });
 
   return (
-    <section id="faq" ref={containerRef} className="w-full bg-white pt-24 pb-12 px-4 md:px-6 lg:px-8 border-t border-[#1B1B1B]/5 relative">
+    <section id="faq" ref={containerRef} className="w-full bg-white pt-24 pb-12 px-4 md:px-6 lg:px-8 border-t border-[#1B1B1B]/5 relative scroll-mt-24">
       <div className="max-w-[1400px] mx-auto px-8 md:px-16 lg:px-20">
         
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-24 items-start">

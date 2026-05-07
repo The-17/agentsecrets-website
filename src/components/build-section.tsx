@@ -122,7 +122,7 @@ export default function BuildSection() {
   }, { scope: containerRef });
 
   return (
-    <section id="build" ref={containerRef} className="w-full bg-white pt-8 pb-24 px-4 md:px-6 lg:px-8">
+    <section id="build" ref={containerRef} className="w-full bg-white pt-8 pb-24 px-4 md:px-6 lg:px-8 scroll-mt-24">
       <div className="max-w-[1400px] mx-auto">
         
         {/* Content Container */}

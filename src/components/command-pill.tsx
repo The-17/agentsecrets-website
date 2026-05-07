@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Copy, Check } from 'lucide-react';
 
@@ -20,16 +21,17 @@ function getDisplayCommand(fullCommand: string, methodLabel: string): string {
 }
 
 export default function CommandPill() {
+  const pathname = usePathname();
   const [method, setMethod] = useState(INSTALL_METHODS[0]);
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [isDropdownReady, setIsDropdownReady] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  const calmBounce = { type: 'spring', stiffness: 180, damping: 18 } as const;
+  const isDocsPage = pathname?.startsWith('/docs');
 
   useEffect(() => {
+    // Small delay to prevent layout shift during hydration/mount
     const timer = setTimeout(() => setIsReady(true), 2400);
     return () => clearTimeout(timer);
   }, []);
@@ -53,6 +55,8 @@ export default function CommandPill() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  if (isDocsPage) return null;
+
   const copyToClipboard = () => {
     navigator.clipboard.writeText(method.command);
     setCopied(true);
@@ -60,6 +64,8 @@ export default function CommandPill() {
   };
 
   const displayCmd = getDisplayCommand(method.command, method.label);
+
+  const calmBounce = { type: 'spring', stiffness: 180, damping: 18 } as const;
 
   return (
     <div className='fixed bottom-6 sm:bottom-8 left-0 right-0 z-[100] px-5 flex justify-center'>

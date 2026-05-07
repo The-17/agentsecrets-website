@@ -135,7 +135,7 @@ export default function PlatformSection() {
     <section 
       ref={containerRef}
       id='platform'
-      className='w-full bg-white py-20 flex flex-col items-center justify-center'
+      className='w-full bg-white py-20 flex flex-col items-center justify-center scroll-mt-24'
     >
       <div className='w-full flex flex-col items-center'>
         
