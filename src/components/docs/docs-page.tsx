@@ -30,6 +30,8 @@ const DOCS_SECTIONS = [
   { id: "openclaw-i",    group: "Integrations",  label: "OpenClaw" },
   { id: "cli-full",      group: "Reference",     label: "CLI Reference" },
   { id: "sdk-ref",       group: "Reference",     label: "SDK Reference" },
+  { id: "auth-reference", group: "Reference",     label: "Auth Methods" },
+  { id: "audit-reference", group: "Reference",     label: "Audit Log Schema" },
 ];
 
 function Breadcrumb({ items }: { items: string[] }) {
@@ -46,52 +48,108 @@ function Breadcrumb({ items }: { items: string[] }) {
 }
 
 function SidebarContent({ active, groups, onJump }: { active: string; groups: string[]; onJump: (id: string) => void }) {
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+  // Ensure the group containing the active item is always expanded
+  useEffect(() => {
+    const activeGroup = DOCS_SECTIONS.find(s => s.id === active)?.group;
+    if (activeGroup && collapsedGroups.has(activeGroup)) {
+      setCollapsedGroups(prev => {
+        const next = new Set(prev);
+        next.delete(activeGroup);
+        return next;
+      });
+    }
+  }, [active, collapsedGroups]);
+
+  const toggleGroup = (group: string) => {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(group)) next.delete(group);
+      else next.add(group);
+      return next;
+    });
+  };
+
   return (
     <>
-      {groups.map((group) => (
-        <div key={group} style={{ marginBottom: 32 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)", marginBottom: 12, paddingLeft: 12 }}>
-            {group}
-          </div>
-          {DOCS_SECTIONS.filter((s) => s.group === group).map((s) => {
-            const isActive = active === s.id;
-            return (
-              <button
-                key={s.id}
-                onClick={() => onJump(s.id)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  width: "100%",
-                  padding: "8px 12px",
-                  borderRadius: 8,
-                  fontSize: 13,
-                  color: isActive ? "#1B1B1B" : "#666666",
-                  background: isActive ? "rgba(0,255,135,0.08)" : "transparent",
-                  border: `1px solid ${isActive ? "rgba(0,127,106,0.1)" : "transparent"}`,
-                  cursor: "pointer",
-                  transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                  textAlign: "left",
-                  marginBottom: 2,
-                  fontFamily: "inherit",
-                  fontWeight: isActive ? 500 : 400
-                }}
+      {groups.map((group) => {
+        const isCollapsed = collapsedGroups.has(group);
+        return (
+          <div key={group} style={{ marginBottom: 24 }}>
+            <button 
+              onClick={() => toggleGroup(group)}
+              style={{ 
+                display: "flex", 
+                alignItems: "center", 
+                justifyContent: "space-between", 
+                width: "100%", 
+                background: "none", 
+                border: "none", 
+                padding: "4px 12px", 
+                marginBottom: 8,
+                cursor: "pointer",
+                textAlign: "left"
+              }}
+            >
+              <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)" }}>
+                {group}
+              </span>
+              <svg 
+                width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                style={{ transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}
               >
-                <span style={{
-                  width: 6, height: 6, borderRadius: "50%",
-                  background: "#007F6A",
-                  display: "inline-block",
-                  opacity: isActive ? 1 : 0,
-                  transition: "opacity 0.2s",
-                  flexShrink: 0,
-                }} />
-                {s.label}
-              </button>
-            );
-          })}
-        </div>
-      ))}
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+            <div style={{ 
+              display: "grid", 
+              gridTemplateRows: isCollapsed ? "0fr" : "1fr",
+              transition: "grid-template-rows 0.3s ease",
+            }}>
+              <div style={{ overflow: "hidden" }}>
+                {DOCS_SECTIONS.filter((s) => s.group === group).map((s) => {
+                  const isActive = active === s.id;
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => onJump(s.id)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        width: "100%",
+                        padding: "8px 12px",
+                        borderRadius: 8,
+                        fontSize: 13,
+                        color: isActive ? "#1B1B1B" : "#666666",
+                        background: isActive ? "rgba(0,255,135,0.08)" : "transparent",
+                        border: `1px solid ${isActive ? "rgba(0,127,106,0.1)" : "transparent"}`,
+                        cursor: "pointer",
+                        transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                        textAlign: "left",
+                        marginBottom: 2,
+                        fontFamily: "inherit",
+                        fontWeight: isActive ? 500 : 400
+                      }}
+                    >
+                      <span style={{
+                        width: 6, height: 6, borderRadius: "50%",
+                        background: "#007F6A",
+                        display: "inline-block",
+                        opacity: isActive ? 1 : 0,
+                        transition: "opacity 0.2s",
+                        flexShrink: 0,
+                      }} />
+                      {s.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </>
   );
 }
