@@ -30,7 +30,7 @@ You should see all your key names. If anything is missing, set it manually:
 agentsecrets secrets set MISSING_KEY=value
 ```
 
-### Step 3 — Authorize your domains
+## Step 3 — Authorize your domains
 
 ```bash
 agentsecrets workspace allowlist add api.stripe.com api.openai.com

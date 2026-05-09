@@ -4,34 +4,191 @@ import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { CodeWindow, McpJsonWindow } from "@/components/ui/code-window";
 import MarkdownRenderer from "./markdown-renderer";
+import SearchPill from "./search-pill";
 import { getDocContent, submitFeedback } from "@/app/actions/docs";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
 const DOCS_SECTIONS = [
-  { id: "overview",      group: "Introduction",  label: "Overview" },
-  { id: "quickstart",    group: "Introduction",  label: "Getting Started" },
-  { id: "howworks",      group: "Core Concepts", label: "How It Works" },
-  { id: "keychain",      group: "Core Concepts", label: "OS Keychain" },
-  { id: "storagemodes",  group: "Core Concepts", label: "Storage Modes" },
-  { id: "zerok",         group: "Core Concepts", label: "Zero-Knowledge Design" },
-  { id: "environments",  group: "Core Concepts", label: "Environments" },
-  { id: "allowlist",     group: "Core Concepts", label: "Domain Allowlist" },
-  { id: "redaction",     group: "Core Concepts", label: "Response Redaction" },
-  { id: "identity",      group: "Core Concepts", label: "Agent Identity" },
-  { id: "governancelog", group: "Core Concepts", label: "Governance Log" },
-  { id: "workspaces",    group: "Team Features", label: "Workspaces" },
-  { id: "projects",      group: "Team Features", label: "Projects" },
-  { id: "secretsmanagement", group: "Team Features", label: "Secrets Management" },
-  { id: "mcp",           group: "Integrations",  label: "MCP / Claude Desktop" },
-  { id: "proxy-int",     group: "Integrations",  label: "HTTP Proxy" },
-  { id: "sdk-int",       group: "Integrations",  label: "Python SDK" },
-  { id: "env-int",       group: "Integrations",  label: "agentsecrets env" },
-  { id: "openclaw-i",    group: "Integrations",  label: "OpenClaw" },
-  { id: "cli-full",      group: "Reference",     label: "CLI Reference" },
-  { id: "sdk-ref",       group: "Reference",     label: "SDK Reference" },
-  { id: "auth-reference", group: "Reference",     label: "Auth Methods" },
-  { id: "audit-reference", group: "Reference",     label: "Audit Log Schema" },
+  // Getting Started
+  { id: "what-is-agentsecrets", group: "Getting Started", label: "What is AgentSecrets?" },
+  { id: "zero-knowledge-difference", group: "Getting Started", label: "The Zero-Knowledge Difference" },
+  { id: "how-it-works", group: "Getting Started", label: "How AgentSecrets Works" },
+  { id: "installation", group: "Getting Started", label: "Installation" },
+  { id: "quick-start", group: "Getting Started", label: "Quick Start" },
+  { id: "migrate-from-env", group: "Getting Started", label: "Migrating from .env Files" },
+  { id: "migrate-from-vault", group: "Getting Started", label: "Migrating from Vault / AWS" },
+  { id: "migrate-from-dotenv-vault", group: "Getting Started", label: "Migrating from dotenv-vault" },
+  { id: "production-checklist", group: "Getting Started", label: "Production Checklist" },
+
+  // Fundamental Concepts
+  { id: "concepts/credential-exposure", group: "Fundamental Concepts", label: "Credential Exposure" },
+  { id: "concepts/zero-knowledge", group: "Fundamental Concepts", label: "What Zero-Knowledge Means" },
+  { id: "concepts/proxy-model", group: "Fundamental Concepts", label: "The Proxy Model" },
+  { id: "concepts/secrets-projects-workspaces", group: "Fundamental Concepts", label: "The Three-Layer Model" },
+  { id: "concepts/environments", group: "Fundamental Concepts", label: "Environments" },
+  { id: "concepts/agent-identity", group: "Fundamental Concepts", label: "Agent Identity" },
+  { id: "concepts/storage-modes", group: "Fundamental Concepts", label: "Storage Modes" },
+  { id: "concepts/no-get-method", group: "Fundamental Concepts", label: "The No get() Principle" },
+
+  // Secrets
+  { id: "secrets/managing", group: "Secrets", label: "Managing Secrets" },
+  { id: "secrets/push", group: "Secrets", label: "Pushing to Cloud Sync" },
+  { id: "secrets/pull", group: "Secrets", label: "Pulling from Cloud Sync" },
+  { id: "secrets/diff", group: "Secrets", label: "Diffing Secrets" },
+  { id: "secrets/import-env", group: "Secrets", label: "Importing from .env" },
+  { id: "secrets/rotation", group: "Secrets", label: "Secret Rotation (Soon)" },
+
+  // Environments
+  { id: "environments/overview", group: "Environments", label: "Environments Overview" },
+  { id: "environments/switch", group: "Environments", label: "Switching Environments" },
+  { id: "environments/list", group: "Environments", label: "Listing & Coverage" },
+  { id: "environments/copy", group: "Environments", label: "Copying an Environment" },
+  { id: "environments/merge", group: "Environments", label: "Merging Environments" },
+  { id: "environments/clean", group: "Environments", label: "Cleaning an Environment" },
+
+  // The Credential Proxy
+  { id: "proxy/overview", group: "The Credential Proxy", label: "Proxy Overview" },
+  { id: "proxy/start-stop", group: "The Credential Proxy", label: "Starting and Stopping" },
+  { id: "proxy/injection", group: "The Credential Proxy", label: "How Injection Works" },
+  { id: "proxy/injection-styles", group: "The Credential Proxy", label: "Auth Injection Styles" },
+  { id: "proxy/domain-allowlist", group: "The Credential Proxy", label: "Domain Allowlist" },
+  { id: "proxy/response-redaction", group: "The Credential Proxy", label: "Response Body Redaction" },
+  { id: "proxy/ssrf-protection", group: "The Credential Proxy", label: "SSRF Protection" },
+  { id: "proxy/session-token", group: "The Credential Proxy", label: "Session Token Auth" },
+  { id: "proxy/logs", group: "The Credential Proxy", label: "Proxy Logs" },
+  { id: "proxy/http-clients", group: "The Credential Proxy", label: "Using with HTTP Clients" },
+  { id: "proxy/performance", group: "The Credential Proxy", label: "Performance & Latency" },
+
+  // Environment Variable Injection
+  { id: "env-injection/overview", group: "Env Injection", label: "How it Works" },
+  { id: "env-injection/any-process", group: "Env Injection", label: "Injecting into Any Process" },
+  { id: "env-injection/proxy-vs-env", group: "Env Injection", label: "Proxy vs env Injection" },
+
+  // Workspaces & Teams
+  { id: "workspaces/overview", group: "Workspaces & Teams", label: "Workspaces Overview" },
+  { id: "workspaces/create", group: "Workspaces & Teams", label: "Creating a Workspace" },
+  { id: "workspaces/invite", group: "Workspaces & Teams", label: "Inviting Team Members" },
+  { id: "workspaces/roles", group: "Workspaces & Teams", label: "Roles and Permissions" },
+  { id: "workspaces/onboarding", group: "Workspaces & Teams", label: "Onboarding a Developer" },
+  { id: "workspaces/revoke", group: "Workspaces & Teams", label: "Revoking Access" },
+  { id: "workspaces/multiple", group: "Workspaces & Teams", label: "Multiple Workspaces" },
+
+  // Projects
+  { id: "projects/overview", group: "Projects", label: "Projects Overview" },
+  { id: "projects/create", group: "Projects", label: "Creating a Project" },
+  { id: "projects/switch", group: "Projects", label: "Switching Between Projects" },
+  { id: "projects/update-delete", group: "Projects", label: "Updating and Deleting" },
+  { id: "projects/invites", group: "Projects", label: "Project Invites" },
+  { id: "projects/organizing", group: "Projects", label: "Organizing Projects" },
+
+  // Agent Identity
+  { id: "agent-identity/overview", group: "Agent Identity", label: "Identity Overview" },
+  { id: "agent-identity/anonymous", group: "Agent Identity", label: "Anonymous Agents" },
+  { id: "agent-identity/declared", group: "Agent Identity", label: "Declared Identity" },
+  { id: "agent-identity/tokens-issue", group: "Agent Identity", label: "Cryptographic Tokens" },
+  { id: "agent-identity/token-lifecycle", group: "Agent Identity", label: "Token Lifecycle" },
+  { id: "agent-identity/multi-agent", group: "Agent Identity", label: "Multi-Agent Systems" },
+  { id: "agent-identity/auditing", group: "Agent Identity", label: "Auditing by Identity" },
+  { id: "agent-identity/anonymous-gaps", group: "Agent Identity", label: "Finding Coverage Gaps" },
+
+  // Audit & Governance
+  { id: "audit/overview", group: "Audit & Governance", label: "Audit Log Overview" },
+  { id: "audit/reading", group: "Audit & Governance", label: "Reading and Filtering" },
+  { id: "audit/summary", group: "Audit & Governance", label: "Log Summary" },
+  { id: "audit/export", group: "Audit & Governance", label: "Exporting Logs (CSV)" },
+  { id: "audit/detail", group: "Audit & Governance", label: "Log Detail" },
+  { id: "audit/compliance", group: "Audit & Governance", label: "Using for Compliance" },
+
+  // Integrations
+  { id: "integrations/overview", group: "Integrations", label: "Integrations Overview" },
+  { id: "integrations/claude-desktop", group: "Integrations", label: "Claude Desktop" },
+  { id: "integrations/cursor", group: "Integrations", label: "Cursor" },
+  { id: "integrations/openclaw", group: "Integrations", label: "OpenClaw" },
+  { id: "integrations/http-proxy", group: "Integrations", label: "HTTP Proxy (Any)" },
+  { id: "integrations/langchain-native", group: "Integrations", label: "LangChain (Soon)" },
+  { id: "integrations/crewai-native", group: "Integrations", label: "CrewAI (Soon)" },
+  { id: "integrations/cicd", group: "Integrations", label: "CI/CD Pipeline" },
+
+  // SDK
+  { id: "sdk/overview", group: "SDK", label: "SDK Overview" },
+  { id: "sdk/python", group: "SDK", label: "Python SDK" },
+  { id: "sdk/python-reference", group: "SDK", label: "Python API Reference" },
+  { id: "sdk/javascript", group: "SDK", label: "JavaScript SDK (Soon)" },
+  { id: "sdk/zero-knowledge-mcp", group: "SDK", label: "ZK MCP Server" },
+
+  // API & Backend
+  { id: "api/overview", group: "API & Backend", label: "Backend Overview" },
+  { id: "api/architecture", group: "API & Backend", label: "API Architecture" },
+  { id: "api/authentication", group: "API & Backend", label: "Authentication" },
+  { id: "api/workspaces", group: "API & Backend", label: "Workspaces API" },
+  { id: "api/projects", group: "API & Backend", label: "Projects API" },
+  { id: "api/secrets", group: "API & Backend", label: "Secrets API" },
+  { id: "api/environments", group: "API & Backend", label: "Environments API" },
+  { id: "api/agent-identity", group: "API & Backend", label: "Agent Identity API" },
+  { id: "api/audit", group: "API & Backend", label: "Audit Log API" },
+  { id: "api/reference", group: "API & Backend", label: "API Reference (Swagger)" },
+
+  // Guides
+  { id: "guides/guide", group: "Guides", label: "Guides Overview" },
+  { id: "guides/stripe", group: "Guides", label: "Stripe Integration" },
+  { id: "guides/openai", group: "Guides", label: "OpenAI Integration" },
+  { id: "guides/multi-agent", group: "Guides", label: "Multi-Agent Setup" },
+  { id: "guides/onboarding-developer", group: "Guides", label: "Onboarding Team" },
+  { id: "guides/cicd", group: "Guides", label: "CI/CD Pipeline" },
+  { id: "guides/build-zk-mcp", group: "Guides", label: "Publishing ZK MCP" },
+  { id: "guides/rotate-credential", group: "Guides", label: "Rotating Credentials" },
+  { id: "guides/audit-team", group: "Guides", label: "Auditing Team Activity" },
+  { id: "guides/dev-to-production", group: "Guides", label: "Dev to Production" },
+  { id: "guides/monorepo", group: "Guides", label: "Monorepo Setup" },
+
+  // Security
+  { id: "security/overview", group: "Security", label: "Security Overview" },
+  { id: "security/encryption", group: "Security", label: "Encryption Model" },
+  { id: "security/cloud-sync", group: "Security", label: "Zero-Knowledge Sync" },
+  { id: "security/proxy-layers", group: "Security", label: "Proxy Security Layers" },
+  { id: "security/threat-model", group: "Security", label: "Threat Model" },
+  { id: "security/faq", group: "Security", label: "Security FAQ" },
+  { id: "security/audit-status", group: "Security", label: "Third-Party Audit" },
+  { id: "security/reporting", group: "Security", label: "Reporting Vulnerabilities" },
+
+  // Comparisons
+  { id: "comparisons/vs-env-files", group: "Comparisons", label: "vs .env Files" },
+  { id: "comparisons/vs-vault", group: "Comparisons", label: "vs HashiCorp Vault" },
+  { id: "comparisons/vs-aws-secrets-manager", group: "Comparisons", label: "vs AWS Secrets Manager" },
+  { id: "comparisons/vs-dotenv-vault", group: "Comparisons", label: "vs dotenv-vault" },
+  { id: "comparisons/vs-infisical", group: "Comparisons", label: "vs Infisical" },
+  { id: "comparisons/when-not-to-use", group: "Comparisons", label: "When Not to Use" },
+
+  // Troubleshooting
+  { id: "troubleshooting/proxy-not-starting", group: "Troubleshooting", label: "Proxy Not Starting" },
+  { id: "troubleshooting/proxy-not-resolving", group: "Troubleshooting", label: "Proxy Not Resolving" },
+  { id: "troubleshooting/domain-blocked", group: "Troubleshooting", label: "Domain Blocked" },
+  { id: "troubleshooting/sync-conflicts", group: "Troubleshooting", label: "Sync Conflicts" },
+  { id: "troubleshooting/mcp", group: "Troubleshooting", label: "MCP Not Connecting" },
+  { id: "troubleshooting/session-token", group: "Troubleshooting", label: "Session Token Errors" },
+  { id: "troubleshooting/installation", group: "Troubleshooting", label: "Installation Issues" },
+
+  // FAQ
+  { id: "faq", group: "FAQ", label: "Frequently Asked Questions" },
+
+  // Changelog
+  { id: "changelog/v1-2-0", group: "Changelog", label: "v1.2.0" },
+  { id: "changelog/v1-1-x", group: "Changelog", label: "v1.1.x" },
+  { id: "changelog/v1-0-x", group: "Changelog", label: "v1.0.x" },
+
+  // CLI Reference
+  { id: "cli/account", group: "CLI Reference", label: "init / login / logout" },
+  { id: "cli/secrets", group: "CLI Reference", label: "secrets" },
+  { id: "cli/environment", group: "CLI Reference", label: "environment" },
+  { id: "cli/workspace", group: "CLI Reference", label: "workspace" },
+  { id: "cli/project", group: "CLI Reference", label: "project" },
+  { id: "cli/proxy", group: "CLI Reference", label: "proxy" },
+  { id: "cli/call", group: "CLI Reference", label: "call" },
+  { id: "cli/mcp", group: "CLI Reference", label: "mcp" },
+  { id: "cli/env", group: "CLI Reference", label: "env" },
+  { id: "cli/log", group: "CLI Reference", label: "log" },
+  { id: "cli/agent", group: "CLI Reference", label: "agent" },
 ];
 
 function Breadcrumb({ items }: { items: string[] }) {
@@ -48,22 +205,22 @@ function Breadcrumb({ items }: { items: string[] }) {
 }
 
 function SidebarContent({ active, groups, onJump }: { active: string; groups: string[]; onJump: (id: string) => void }) {
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   // Ensure the group containing the active item is always expanded
   useEffect(() => {
     const activeGroup = DOCS_SECTIONS.find(s => s.id === active)?.group;
-    if (activeGroup && collapsedGroups.has(activeGroup)) {
-      setCollapsedGroups(prev => {
+    if (activeGroup && !expandedGroups.has(activeGroup)) {
+      setExpandedGroups(prev => {
         const next = new Set(prev);
-        next.delete(activeGroup);
+        next.add(activeGroup);
         return next;
       });
     }
-  }, [active, collapsedGroups]);
+  }, [active]);
 
   const toggleGroup = (group: string) => {
-    setCollapsedGroups(prev => {
+    setExpandedGroups(prev => {
       const next = new Set(prev);
       if (next.has(group)) next.delete(group);
       else next.add(group);
@@ -74,7 +231,7 @@ function SidebarContent({ active, groups, onJump }: { active: string; groups: st
   return (
     <>
       {groups.map((group) => {
-        const isCollapsed = collapsedGroups.has(group);
+        const isExpanded = expandedGroups.has(group);
         return (
           <div key={group} style={{ marginBottom: 24 }}>
             <button 
@@ -92,57 +249,95 @@ function SidebarContent({ active, groups, onJump }: { active: string; groups: st
                 textAlign: "left"
               }}
             >
-              <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "var(--muted)" }}>
+              <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.02em", color: "var(--muted)" }}>
                 {group}
               </span>
               <svg 
                 width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                style={{ transform: isCollapsed ? "rotate(-90deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}
+                style={{ transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.2s ease" }}
               >
                 <polyline points="6 9 12 15 18 9"></polyline>
               </svg>
             </button>
             <div style={{ 
               display: "grid", 
-              gridTemplateRows: isCollapsed ? "0fr" : "1fr",
+              gridTemplateRows: isExpanded ? "1fr" : "0fr",
               transition: "grid-template-rows 0.3s ease",
             }}>
               <div style={{ overflow: "hidden" }}>
-                {DOCS_SECTIONS.filter((s) => s.group === group).map((s) => {
+                {DOCS_SECTIONS.filter((s) => s.group === group && !(s as any).parent).map((s) => {
                   const isActive = active === s.id;
+                  const children = DOCS_SECTIONS.filter((child) => (child as any).parent === s.id);
+                  const isParentOrChildActive = isActive || children.some(child => child.id === active);
+
                   return (
-                    <button
-                      key={s.id}
-                      onClick={() => onJump(s.id)}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        width: "100%",
-                        padding: "8px 12px",
-                        borderRadius: 8,
-                        fontSize: 13,
-                        color: isActive ? "#1B1B1B" : "#666666",
-                        background: isActive ? "rgba(0,255,135,0.08)" : "transparent",
-                        border: `1px solid ${isActive ? "rgba(0,127,106,0.1)" : "transparent"}`,
-                        cursor: "pointer",
-                        transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                        textAlign: "left",
-                        marginBottom: 2,
-                        fontFamily: "inherit",
-                        fontWeight: isActive ? 500 : 400
-                      }}
-                    >
-                      <span style={{
-                        width: 6, height: 6, borderRadius: "50%",
-                        background: "#007F6A",
-                        display: "inline-block",
-                        opacity: isActive ? 1 : 0,
-                        transition: "opacity 0.2s",
-                        flexShrink: 0,
-                      }} />
-                      {s.label}
-                    </button>
+                    <div key={s.id}>
+                      <button
+                        onClick={() => onJump(s.id)}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          width: "100%",
+                          padding: "8px 12px",
+                          borderRadius: 8,
+                          fontSize: 13,
+                          color: isActive ? "#1B1B1B" : "#666666",
+                          background: isActive ? "rgba(0,255,135,0.08)" : "transparent",
+                          border: `1px solid ${isActive ? "rgba(0,127,106,0.1)" : "transparent"}`,
+                          cursor: "pointer",
+                          transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                          textAlign: "left",
+                          marginBottom: children.length > 0 && isParentOrChildActive ? 4 : 2,
+                          fontFamily: "inherit",
+                          fontWeight: isActive ? 500 : 400
+                        }}
+                      >
+                        <span style={{
+                          width: 6, height: 6, borderRadius: "50%",
+                          background: "#007F6A",
+                          display: "inline-block",
+                          opacity: isActive ? 1 : 0,
+                          transition: "opacity 0.2s",
+                          flexShrink: 0,
+                        }} />
+                        {s.label}
+                      </button>
+
+                      {children.length > 0 && isParentOrChildActive && (
+                        <div style={{ paddingLeft: 16, marginBottom: 8 }}>
+                          {children.map(child => {
+                            const isChildActive = active === child.id;
+                            return (
+                              <button
+                                key={child.id}
+                                onClick={() => onJump(child.id)}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 8,
+                                  width: "100%",
+                                  padding: "6px 12px",
+                                  borderRadius: 8,
+                                  fontSize: 12,
+                                  color: isChildActive ? "#1B1B1B" : "#888888",
+                                  background: isChildActive ? "rgba(0,255,135,0.05)" : "transparent",
+                                  border: `1px solid ${isChildActive ? "rgba(0,127,106,0.1)" : "transparent"}`,
+                                  cursor: "pointer",
+                                  transition: "all 0.2s",
+                                  textAlign: "left",
+                                  marginBottom: 2,
+                                  fontFamily: "inherit",
+                                  fontWeight: isChildActive ? 500 : 400
+                                }}
+                              >
+                                {child.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                   );
                 })}
               </div>
@@ -157,7 +352,7 @@ function SidebarContent({ active, groups, onJump }: { active: string; groups: st
 const docsCache: Record<string, string> = {};
 
 export default function DocsPage() {
-  const [active, setActive] = useState("overview");
+  const [active, setActive] = useState("what-is-agentsecrets");
   const [content, setContent] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -180,10 +375,21 @@ export default function DocsPage() {
 
   // 2. Resolve section from URL
   useEffect(() => {
-    const hash = window.location.hash.replace("#", "");
-    if (hash && DOCS_SECTIONS.find((s) => s.id === hash)) {
-      setActive(hash);
-    }
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace("#", "");
+      if (hash && DOCS_SECTIONS.find((s) => s.id === hash)) {
+        setActive(hash);
+      } else if (!hash) {
+        setActive("what-is-agentsecrets");
+      }
+    };
+    
+    // Initial check
+    handleHashChange();
+    
+    // Listen for changes
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
   }, [searchParams]);
 
   // 3. Load content (Instant if cached)
@@ -349,11 +555,7 @@ export default function DocsPage() {
         <SidebarContent active={active} groups={groups} onJump={jump} />
       </div>
 
-      {/* Mobile FAB */}
-      <button className="docs-fab lg:hidden" onClick={() => setDrawerOpen(true)} style={{ position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", zIndex: 199, display: "flex", alignItems: "center", gap: 8, padding: "10px 18px", background: "#0A0A0A", borderRadius: 100, color: "white", fontSize: 12, fontWeight: 600 }}>
-        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#00FF87" }} />
-        {activeLabel}
-      </button>
+
 
       {/* Desktop Sidebar */}
       <aside className="docs-sidebar hidden lg:block" style={{ position: "fixed", left: 0, width: 280, top: 60, height: "calc(100vh - 60px)", overflowY: "auto", borderRight: "1px solid var(--border)", padding: "32px 24px" }}>
@@ -475,6 +677,8 @@ export default function DocsPage() {
           )}
         </aside>
       </div>
+      
+      <SearchPill onMenuClick={() => setDrawerOpen(true)} />
     </>
   );
 }
