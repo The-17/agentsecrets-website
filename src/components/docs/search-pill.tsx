@@ -60,7 +60,7 @@ export default function SearchPill({ onMenuClick }: { onMenuClick?: () => void }
   }, [query, growCount]);
 
   const smoothSpring = {
-    type: 'spring',
+    type: 'spring' as const,
     stiffness: 260,
     damping: 32,
     mass: 0.5
