@@ -1,16 +1,36 @@
 # Agent Identity
 
-In a single-agent workflow, the audit log is enough to understand what happened. In a multi-agent workflow, where multiple agents may be running different tasks simultaneously, possibly sharing the same secrets, you need to know which agent made a specific call. Agent identity solves this.
+In a single-agent workflow, knowing that a call was made is usually enough. In a multi-agent workflow — where multiple agents run simultaneously, share the same secrets, and make overlapping calls — you need to know which agent made each specific call.
 
-AgentSecrets supports three identity levels.
+Agent identity lets you attribute every proxied call to a specific agent, filter audit logs by agent, and revoke access for one agent without affecting any others.
 
-## Anonymous
+---
 
-This is the default. Calls are logged and attributed to no specific agent. Useful for single-agent setups or scripts where identity tracking is not needed.
+## Why agent identity matters
 
-## Declared identity
+Consider a production environment with three agents: one processing payments, one sending emails, one generating reports. All three share the same workspace and have access to the same secrets. Something goes wrong — a large number of unexpected API calls appear in the audit log.
 
-The agent declares its name at initialization. The name is recorded in every audit log entry.
+Without agent identity, you know what was called and when, but not which agent made the calls. With issued identity, every log entry is attributed to a specific agent. You can immediately see which agent made the unexpected calls, revoke its token without touching the others, and continue operating while you investigate.
+
+---
+
+## The three identity levels
+
+AgentSecrets supports three levels of agent identity with increasing strength of attribution and control.
+
+### Anonymous
+
+The default. Calls are made and logged without any agent attribution. The audit log records that a call happened, but not which agent made it. Suitable for single-agent setups, scripts and one-off tools, and development.
+
+The risk in a multi-agent system: anonymous calls create coverage gaps. You cannot attribute incidents to specific agents, and you cannot revoke access for one agent without stopping them all. Find anonymous calls in the audit log with:
+
+```bash
+agentsecrets log list --identity anonymous
+```
+
+### Declared identity
+
+The agent declares its name at initialization. The name is recorded in every audit log entry for that agent's calls. There is no cryptographic verification — if an agent claims to be `"billing-processor"`, it is taken at its word.
 
 ```python
 from agentsecrets import AgentSecrets
@@ -18,36 +38,69 @@ from agentsecrets import AgentSecrets
 client = AgentSecrets(agent_id="billing-processor")
 ```
 
-```bash
-# Filter audit log by agent
-agentsecrets log list --agent billing-processor
+Declared identity is suitable for multi-agent systems where audit log clarity matters but you trust the agents running and do not need per-token revocation.
 
-# Find calls with no identity set — useful for finding coverage gaps
-agentsecrets log list --identity anonymous
-```
+### Issued identity
 
-## Issued identity
-
-The agent is issued a cryptographically signed token. The proxy verifies the token on every call. Tokens can be revoked individually without affecting other agents or tokens.
+The agent is issued a cryptographically signed token. The proxy verifies the token on every call. Attribution is cryptographic — a call attributed to `"billing-processor"` can only have come from a process holding that token.
 
 ```bash
-# Issue a token for an agent
+# Issue a token
 agentsecrets agent token issue "billing-processor"
 # → agt_ws01hxyz_4kR9mNpQ...
-
-# List active tokens for an agent
-agentsecrets agent token list "billing-processor"
-
-# Revoke a specific token
-agentsecrets agent token revoke <token-id> --agent="billing-processor"
+# Shown once — store it securely immediately
 ```
 
 ```python
 client = AgentSecrets(agent_token="agt_ws01hxyz_4kR9mNpQ...")
 ```
 
-Every call made with an issued token is cryptographically attributable to that token. Revoking the token immediately prevents any further calls using it. Other agents and tokens are unaffected.
+Use issued identity for production multi-agent systems, agents with access to sensitive secrets, and any situation where you need to revoke a single agent's access immediately.
+
+---
+
+## How identity flows into the audit log
+
+Every proxy call produces an audit log entry. The identity fields in that entry depend on the identity level used:
+
+| Identity level | `agent_id` field | `agent_identity_level` field |
+|---|---|---|
+| Anonymous | `null` | `"anonymous"` |
+| Declared | `"billing-processor"` | `"declared"` |
+| Issued | `"billing-processor"` | `"issued"` |
+
+For issued identity, the log entry is cryptographically tied to the specific token used. If that token is later revoked, the historical entries remain — you can still see what that agent did before revocation.
+
+---
+
+## Token-based identity explained
+
+Issued tokens are cryptographically signed at the workspace level. When the proxy receives a request with an agent token, it verifies the token's signature before processing the request. Invalid or revoked tokens are rejected immediately — the proxy returns 401 and logs the attempt.
+
+Tokens are individual. Revoking one token has no effect on other tokens issued to the same agent or to different agents:
+
+```bash
+# Issue multiple tokens for the same agent (e.g., multiple instances)
+agentsecrets agent token issue "billing-processor"
+# → agt_ws01hxyz_token1...
+
+agentsecrets agent token issue "billing-processor"
+# → agt_ws01hxyz_token2...
+
+# Revoke one — the other continues working
+agentsecrets agent token revoke <token-id> --agent="billing-processor"
+```
+
+This makes it safe to rotate access for a single agent instance without disrupting others.
+
+---
 
 ## Choosing an identity level
 
-Use anonymous for scripts and single-agent setups. Use declared identity when you have multiple agents and want audit log clarity without the overhead of token management. Use issued identity when you need revocation capability or cryptographic attribution, for example, when an agent has access to sensitive secrets and you want to be able to cut off access immediately if something goes wrong.
+| Situation | Recommended level |
+|---|---|
+| Single agent, development | Anonymous |
+| Multiple agents, want audit clarity | Declared |
+| Production, sensitive secrets | Issued |
+| Need to revoke one agent immediately | Issued |
+| Compliance, cryptographic attribution required | Issued |

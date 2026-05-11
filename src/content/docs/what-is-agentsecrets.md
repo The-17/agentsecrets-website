@@ -4,35 +4,38 @@ AgentSecrets is zero-knowledge secrets management and credential infrastructure 
 
 > The core guarantee: the credential value is never passed to, logged by, or accessible to the AI agent at any point in the call lifecycle. Not as an argument. Not in the response. Not in the audit log.
 
-## Why AgentSecrets Exists
+
+## The problem AgentSecrets solves
 
 Every secrets tool built before the agentic era was designed around a reasonable assumption: the application retrieving credentials is trusted. Store the credential securely, retrieve it at runtime, and use it. That model worked because applications do exactly what their code says.
 
-AI agents are different. A coding assistant reading your codebase can also read your `.env` file. An agent deployed into production processes untrusted content and can be redirected by instructions embedded in that content. The moment a credential value exists anywhere in the agent's context — in memory, in a file it can access, in an environment it can read — it is reachable by prompt injection, malicious plugins, and LLM traces.
+AI agents are different. A coding assistant reading your codebase can also read your `.env` file. An agent deployed into production processes untrusted content and can be redirected by instructions embedded in that content — prompt injection. The moment a credential value exists anywhere in the agent's context, whether in memory, in a file it can read, or in an environment variable it can access, it is reachable.
 
-AgentSecrets removes the value from that space entirely. The agent passes a key name, the proxy resolves the real value from the OS keychain and injects it at the transport layer, then the agent receives the API response. The value existed in memory for the milliseconds required to make the call and nowhere else.
+AgentSecrets removes the value from that space entirely. The agent passes a key name. The proxy resolves the real value from the OS keychain and injects it at the transport layer. The agent receives the API response. The value existed in memory for the milliseconds required to make the HTTP request and nowhere else.
 
-## What It Includes
+## How it fits into your stack
 
-**CLI**: Manages the full credentials lifecycle: secrets, environments, workspaces, projects, agent identity, audit logs, and the local proxy.
+AgentSecrets sits between your AI agent and the APIs it calls. It does not replace your existing secrets manager for your application code — it is purpose-built for the agent credential problem specifically.
 
-**Local proxy**: Runs at `localhost:8765`. Receives requests with injection headers, resolves values from the OS keychain, injects at the transport layer, returns only the API response.
+```
+Your AI Agent
+     │
+     │  passes key name only
+     ▼
+AgentSecrets Proxy (localhost:8765)
+     │
+     │  resolves value from OS keychain
+     │  injects at transport layer
+     ▼
+External API (Stripe, OpenAI, etc.)
+     │
+     │  returns API response only
+     ▼
+Your AI Agent receives the response
+     (never the credential value)
+```
 
-**Zero-knowledge cloud sync**: Encrypted sync across machines and teammates. The server stores ciphertext it cannot decrypt. Your workspace key never leaves your machine.
-
-**Environments**: Development, staging, and production as first-class concepts. One command switches the active environment. The proxy, push, pull, and diff all adjust automatically.
-
-**Agent identity**: Three identity levels for multi-agent workflows. Every call logged against the agent that made it. Individual token revocation without touching anything else.
-
-**Governance audit log**: Every call logged with key name, endpoint, environment, agent identity, status, and the domain allowlist state at the exact moment of execution. No value field exists in the log schema.
-
-**Python SDK**: `pip install agentsecrets`. No `get()` method. The only operations available keep the value out of calling code.
-
-**MCP server**: First-class integration for Claude Desktop and Cursor. One command configures it. No credential values in any config file.
-
-**OpenClaw integration**: Native exec provider for OpenClaw's SecretRef system. Credentials resolve at execution time through the AgentSecrets binary.
-
-**`agentsecrets env`** — wraps any process and injects secrets as environment variables at spawn time. Nothing written to disk.
+The proxy is local. The credential never leaves your machine as plaintext. The agent receives the API response and nothing else.
 
 ## License
 

@@ -359,21 +359,7 @@ export default function DocsPage() {
   const contentRef = useRef<HTMLDivElement>(null);
   const searchParams = useSearchParams();
 
-  // 1. Pre-warm cache on mount
-  useEffect(() => {
-    const prewarm = async () => {
-      for (const s of DOCS_SECTIONS) {
-        if (!docsCache[s.id]) {
-          getDocContent(s.id).then(data => {
-            if (data) docsCache[s.id] = data;
-          });
-        }
-      }
-    };
-    prewarm();
-  }, []);
-
-  // 2. Resolve section from URL
+  // 1. Resolve section from URL
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace("#", "");
@@ -392,23 +378,79 @@ export default function DocsPage() {
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, [searchParams]);
 
-  // 3. Load content (Instant if cached)
+  // 2. Load active content immediately, then prewarm nearby sections
   useEffect(() => {
     let isMounted = true;
     const loadContent = async () => {
+      // Instant render if cached
       if (docsCache[active]) {
         setContent(docsCache[active]);
         setIsLoading(false);
         window.scrollTo({ top: 0, behavior: "smooth" });
-        return;
+      } else {
+        setIsLoading(true);
+        const data = await getDocContent(active);
+        if (isMounted) {
+          if (data) docsCache[active] = data;
+          setContent(data);
+          setIsLoading(false);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
       }
-      setIsLoading(true);
-      const data = await getDocContent(active);
+
+      // After active content is rendered, prewarm nearby sections
       if (isMounted) {
-        if (data) docsCache[active] = data;
-        setContent(data);
-        setIsLoading(false);
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        const currentIndex = DOCS_SECTIONS.findIndex(s => s.id === active);
+        const currentGroup = DOCS_SECTIONS[currentIndex]?.group;
+
+        // Priority 1: Adjacent sections (prev/next) — load immediately
+        const adjacent = [
+          currentIndex > 0 ? DOCS_SECTIONS[currentIndex - 1] : null,
+          currentIndex < DOCS_SECTIONS.length - 1 ? DOCS_SECTIONS[currentIndex + 1] : null,
+        ].filter(Boolean) as typeof DOCS_SECTIONS;
+        
+        for (const s of adjacent) {
+          if (!docsCache[s.id]) {
+            getDocContent(s.id).then(data => { if (data) docsCache[s.id] = data; });
+          }
+        }
+
+        // Priority 2: Same group — load after a short delay
+        setTimeout(() => {
+          if (!isMounted) return;
+          const sameGroup = DOCS_SECTIONS.filter(s => s.group === currentGroup && s.id !== active);
+          for (const s of sameGroup) {
+            if (!docsCache[s.id]) {
+              getDocContent(s.id).then(data => { if (data) docsCache[s.id] = data; });
+            }
+          }
+        }, 500);
+
+        // Priority 3: Everything else — load in small batches during idle time
+        setTimeout(() => {
+          if (!isMounted) return;
+          const remaining = DOCS_SECTIONS.filter(s => !docsCache[s.id]);
+          let i = 0;
+          const BATCH_SIZE = 5;
+          
+          const loadBatch = () => {
+            if (!isMounted || i >= remaining.length) return;
+            const batch = remaining.slice(i, i + BATCH_SIZE);
+            for (const s of batch) {
+              if (!docsCache[s.id]) {
+                getDocContent(s.id).then(data => { if (data) docsCache[s.id] = data; });
+              }
+            }
+            i += BATCH_SIZE;
+            
+            if (typeof requestIdleCallback !== 'undefined') {
+              requestIdleCallback(loadBatch);
+            } else {
+              setTimeout(loadBatch, 200);
+            }
+          };
+          loadBatch();
+        }, 1500);
       }
     };
     loadContent();
