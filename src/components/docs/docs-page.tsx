@@ -199,6 +199,8 @@ export default function DocsPage() {
   }, [searchParams]);
 
   // 2. Load active content immediately, then prewarm nearby sections
+  const [pendingHeadingId, setPendingHeadingId] = useState<string | null>(null);
+
   useEffect(() => {
     let isMounted = true;
     const loadContent = async () => {
@@ -206,7 +208,7 @@ export default function DocsPage() {
       if (docsCache[active]) {
         setContent(docsCache[active]);
         setIsLoading(false);
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        if (!pendingHeadingId) window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
         setIsLoading(true);
         const data = await getDocContent(active);
@@ -214,11 +216,11 @@ export default function DocsPage() {
           if (data) docsCache[active] = data;
           setContent(data);
           setIsLoading(false);
-          window.scrollTo({ top: 0, behavior: "smooth" });
+          if (!pendingHeadingId) window.scrollTo({ top: 0, behavior: "smooth" });
         }
       }
 
-      // After active content is rendered, prewarm nearby sections
+      // ... existing prewarming logic ...
       if (isMounted) {
         const currentIndex = DOCS_SECTIONS.findIndex(s => s.id === active);
         const currentGroup = DOCS_SECTIONS[currentIndex]?.group;
@@ -276,6 +278,20 @@ export default function DocsPage() {
     loadContent();
     return () => { isMounted = false; };
   }, [active]);
+
+  // 2.1 Handle pending heading scroll
+  useEffect(() => {
+    if (pendingHeadingId && !isLoading && content) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(pendingHeadingId);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          setPendingHeadingId(null);
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [pendingHeadingId, isLoading, content]);
 
   // 4. Feedback State (Persistent per section)
   const [feedback, setFeedback] = useState<Record<string, string>>({});
@@ -351,12 +367,15 @@ export default function DocsPage() {
     localStorage.setItem("agentsecrets_feedback", JSON.stringify(newFeedback));
   };
 
-  const jump = (id: string) => {
+  const jump = (id: string, headingId?: string) => {
     setActive(id);
     setDrawerOpen(false);
+    if (headingId) setPendingHeadingId(headingId);
+    
     const section = DOCS_SECTIONS.find((s) => s.id === id);
     const group = section?.group.toLowerCase().replace(/\s+/g, "-") ?? "";
-    window.history.replaceState(null, "", `/docs?q=${encodeURIComponent(group)}#${id}`);
+    const hash = headingId ? headingId : id;
+    window.history.replaceState(null, "", `/docs?q=${encodeURIComponent(group)}#${hash}`);
   };
 
   const groups = [...new Set(DOCS_SECTIONS.map((s) => s.group))];
@@ -539,8 +558,7 @@ export default function DocsPage() {
           )}
         </aside>
       </div>
-      
-      <SearchPill onMenuClick={() => setDrawerOpen(true)} />
+      <SearchPill onMenuClick={() => setDrawerOpen(true)} onNavigate={jump} />
     </>
   );
 }

@@ -1,6 +1,6 @@
 /**
  * Build-time search index generator.
- * Reads all markdown docs, parses them, and outputs a MiniSearch index to public/search-index.json.
+ * Reads all markdown docs, parses them by headings, and outputs a chunked MiniSearch index to public/search-index.json.
  * 
  * Run: npx tsx scripts/generate-search-index.ts
  */
@@ -13,11 +13,10 @@ import { DOCS_SECTIONS } from '../src/lib/docs-sections';
 const DOCS_DIR = path.join(process.cwd(), 'src/content/docs');
 
 interface SearchDocument {
-  id: string;
+  id: string; // sectionId::headingId
   title: string;
   group: string;
   label: string;
-  headings: string;
   body: string;
 }
 
@@ -33,19 +32,67 @@ function stripMarkdown(raw: string): string {
     .trim();
 }
 
-function extractTitle(raw: string, fallbackLabel: string): string {
-  const match = raw.match(/^#\s+(.+)$/m);
-  return match ? match[1].trim() : fallbackLabel;
+function generateSlug(text: string): string {
+  return text.toLowerCase().replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
 }
 
-function extractHeadings(raw: string): string {
-  const matches = raw.match(/^#{2,3}\s+(.+)$/gm);
-  if (!matches) return '';
-  return matches.map(h => h.replace(/^#{2,3}\s+/, '')).join(' ');
+function extractChunks(raw: string, sectionId: string, sectionLabel: string, sectionGroup: string): SearchDocument[] {
+  const chunks: SearchDocument[] = [];
+  
+  // Split by headings (## or ###)
+  const lines = raw.split('\n');
+  let currentHeading = '';
+  let currentHeadingId = '';
+  let currentBodyLines: string[] = [];
+  
+  // First chunk is everything before the first h2/h3
+  let pageTitle = sectionLabel;
+  const h1Match = raw.match(/^#\s+(.+)$/m);
+  if (h1Match) pageTitle = h1Match[1].trim();
+
+  for (const line of lines) {
+    const headingMatch = line.match(/^#{2,3}\s+(.+)$/);
+    
+    if (headingMatch) {
+      // Save previous chunk
+      if (currentBodyLines.length > 0 || currentHeading) {
+        chunks.push({
+          id: currentHeadingId ? `${sectionId}::${currentHeadingId}` : sectionId,
+          title: currentHeading || pageTitle,
+          group: sectionGroup,
+          label: sectionLabel,
+          body: stripMarkdown(currentBodyLines.join(' ')).slice(0, 2000),
+        });
+      }
+      
+      // Start new chunk
+      currentHeading = headingMatch[1].trim();
+      currentHeadingId = generateSlug(currentHeading);
+      currentBodyLines = [];
+    } else {
+      // Don't include # H1 in the body of sub-chunks to avoid redundancy
+      if (!line.startsWith('# ')) {
+        currentBodyLines.push(line);
+      }
+    }
+  }
+  
+  // Last chunk
+  if (currentBodyLines.length > 0 || currentHeading) {
+    chunks.push({
+      id: currentHeadingId ? `${sectionId}::${currentHeadingId}` : sectionId,
+      title: currentHeading || pageTitle,
+      group: sectionGroup,
+      label: sectionLabel,
+      body: stripMarkdown(currentBodyLines.join(' ')).slice(0, 2000),
+    });
+  }
+  
+  return chunks;
 }
 
 function main() {
-  console.log('📚 Generating search index...');
+  console.log('📚 Generating deep search index...');
   
   const documents: SearchDocument[] = [];
   let skipped = 0;
@@ -59,25 +106,15 @@ function main() {
     }
 
     const raw = fs.readFileSync(filePath, 'utf8');
-    const title = extractTitle(raw, section.label);
-    const headings = extractHeadings(raw);
-    const body = stripMarkdown(raw);
-
-    documents.push({
-      id: section.id,
-      title,
-      group: section.group,
-      label: section.label,
-      headings,
-      body: body.slice(0, 5000), // Cap body at 5000 chars to keep index lean
-    });
+    const chunks = extractChunks(raw, section.id, section.label, section.group);
+    documents.push(...chunks);
   }
 
   const miniSearch = new MiniSearch<SearchDocument>({
-    fields: ['title', 'headings', 'body', 'label'],
+    fields: ['title', 'body', 'label'],
     storeFields: ['title', 'group', 'label'],
     searchOptions: {
-      boost: { title: 3, label: 2.5, headings: 2, body: 1 },
+      boost: { title: 4, label: 2, body: 1 },
       fuzzy: 0.2,
       prefix: true,
     },
@@ -91,7 +128,7 @@ function main() {
   const stats = fs.statSync(outputPath);
   const sizeKB = (stats.size / 1024).toFixed(1);
 
-  console.log(`✅ Indexed ${documents.length} documents (skipped ${skipped} missing files)`);
+  console.log(`✅ Indexed ${documents.length} chunks across ${DOCS_SECTIONS.length - skipped} files`);
   console.log(`📦 Output: public/search-index.json (${sizeKB} KB)`);
 }
 

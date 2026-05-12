@@ -164,6 +164,8 @@ export default function MarkdownRenderer({ content }: { content: string }) {
                     style={oneLight}
                     language={match ? match[1] : "text"}
                     PreTag="div"
+                    wrapLines={true}
+                    wrapLongLines={true}
                     customStyle={{ margin: 0, padding: "20px", fontSize: "13px", background: "transparent" }}
                     {...props}
                   >

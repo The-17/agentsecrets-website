@@ -7,10 +7,10 @@ const RECENT_SEARCHES_KEY = 'as-docs-recent-searches';
 const MAX_RECENT = 5;
 
 export interface SearchResult {
-  id: string;
-  title: string;
-  group: string;
-  label: string;
+  id: string;    // Full composite ID: sectionId::headingId
+  title: string; // Heading or Page Title
+  group: string; // Docs Group
+  label: string; // Section Label
   score: number;
 }
 
@@ -67,10 +67,10 @@ export function useDocSearch() {
       }
       const data = await res.json();
       const ms = MiniSearch.loadJSON<SearchResult>(JSON.stringify(data), {
-        fields: ['title', 'headings', 'body', 'label'],
+        fields: ['title', 'body', 'label'],
         storeFields: ['title', 'group', 'label'],
         searchOptions: {
-          boost: { title: 3, label: 2.5, headings: 2, body: 1 },
+          boost: { title: 4, label: 2, body: 1 },
           fuzzy: 0.2,
           prefix: true,
         },
@@ -95,14 +95,14 @@ export function useDocSearch() {
     if (!ms) return [];
 
     const results = ms.search(trimmed, {
-      boost: { title: 3, label: 2.5, headings: 2, body: 1 },
+      boost: { title: 4, label: 2, body: 1 },
       fuzzy: 0.2,
       prefix: true,
     }) as (MiniSearchResult & { title: string; group: string; label: string })[];
 
     return results.slice(0, 8).map(r => ({
       id: r.id,
-      title: r.title || r.label,
+      title: r.title,
       group: r.group,
       label: r.label,
       score: r.score,
