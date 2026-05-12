@@ -169,7 +169,7 @@ export default function StatsSection() {
     <section className="w-full py-24 px-4 md:px-6 lg:px-8 bg-white flex justify-center overflow-hidden relative z-10">
       <div 
         ref={containerRef}
-        className="w-full max-w-[1150px] mx-auto rounded-[48px] md:rounded-[60px] p-10 md:p-16 lg:p-20 flex flex-col lg:flex-row items-center justify-between gap-16 lg:gap-24"
+        className="w-full max-w-[1150px] mx-auto rounded-[24px] md:rounded-[60px] p-6 md:p-16 lg:p-20 flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-24"
         style={{
           background: 'linear-gradient(145deg, #f0fdfa 0%, #ccfbf1 100%)',
           boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.8), 0 20px 40px -12px rgba(0,0,0,0.05)'

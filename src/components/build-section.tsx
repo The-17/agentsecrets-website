@@ -126,7 +126,7 @@ export default function BuildSection() {
       <div className="max-w-[1400px] mx-auto">
         
         {/* Content Container */}
-        <div className="w-full relative pt-0 md:pt-4 lg:pt-8 pb-8 md:pb-16 lg:pb-20 px-8 md:px-16 lg:px-20">
+        <div className="w-full relative pt-0 md:pt-4 lg:pt-8 pb-8 md:pb-16 lg:pb-20 px-4 md:px-16 lg:px-20">
           
           {/* Main Header */}
           <div className="reveal-header flex flex-col lg:flex-row lg:items-end justify-between gap-12">

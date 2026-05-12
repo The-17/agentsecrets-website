@@ -107,14 +107,14 @@ export default function Hero() {
     <section
       id="hero-section"
       className='min-h-screen flex flex-col justify-center bg-white'
-      style={{ padding: '0 clamp(32px, 5vw, 100px)' }}
+      style={{ padding: '0 clamp(16px, 5vw, 100px)' }}
     >
       <div className='w-full max-w-[1200px] mx-auto flex flex-col items-center text-center' ref={containerRef}>
 
         {/* Badge Row */}
         <div 
           ref={badgeRowRef}
-          className='flex flex-wrap justify-center items-center gap-3 mb-24'
+          className='flex flex-wrap justify-center items-center gap-2 sm:gap-3 mb-10 sm:mb-24'
           style={{ opacity: 0 }}
         >
           <span className='px-3.5 py-1 rounded-md text-[12px] font-light tracking-tight bg-[#F5F5F7]/60 text-[#1B1B1B] font-poppins'><RollingNumber value={latestTag} delay={1.5} /></span>

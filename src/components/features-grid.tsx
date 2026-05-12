@@ -113,7 +113,7 @@ export default function FeaturesGrid() {
     >
       <div 
         ref={cardRef}
-        className="w-full max-w-[1150px] mx-auto bg-white rounded-[32px] p-8 md:p-12 lg:p-16 flex flex-col items-center"
+        className="w-full max-w-[1150px] mx-auto bg-white rounded-[24px] md:rounded-[32px] p-4 md:p-12 lg:p-16 flex flex-col items-center"
       >
         
         <div className="w-full max-w-fit">

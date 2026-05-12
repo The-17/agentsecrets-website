@@ -32,6 +32,18 @@ body {
   scroll-behavior: smooth;
 }
 
+#__next {
+  overflow-x: hidden;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 a {
   color: inherit;
   text-decoration: none;

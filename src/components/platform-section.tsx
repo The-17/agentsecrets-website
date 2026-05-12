@@ -156,92 +156,91 @@ export default function PlatformSection() {
 
           <div className="h-16 md:h-20" />
         </div>
-        {/* Integrations content area (The Rectangle / Now a full-width band) */}
+
+        {/* Integrations content area */}
         <div className="reveal-content-wrapper w-full">
           <div className='w-full bg-[#F5F5F7] pt-6 pb-6 md:pt-8 md:pb-8 border-y border-[#1B1B1B]/5 min-h-[600px] flex flex-col items-center'>
             <div className='w-full mx-auto px-4 md:px-6 lg:px-8 flex flex-col items-center'>
               
               {/* Integration Selection Pill */}
-              <div className="reveal-pills-wrapper">
-                <div className='reveal-pills bg-[#1B1B1B] p-1 rounded-full flex items-center gap-1 relative overflow-hidden border border-[#1B1B1B]/10 mb-12 mt-0 shadow-lg'>
-            {INTEGRATION_METHODS.map((method) => {
-              const isActive = activeMethod === method;
-              return (
-                <button
-                  key={method}
-                  onClick={() => setActiveMethod(method)}
-                  className={`relative px-8 py-2.5 rounded-full text-[13px] font-bold tracking-tight transition-all duration-200 z-10 ${
-                    isActive ? 'bg-[#5EEAD4] text-[#007F6A]' : 'text-white/40 hover:text-white'
-                  }`}
-                >
-                  {method.toUpperCase()}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-          
-        {/* Substantial Spacer to prevent cramping */}
-        <div className="h-10 md:h-12" />
+              <div className='reveal-pills bg-[#1B1B1B] p-1 rounded-full flex items-center gap-1 relative overflow-x-auto border border-[#1B1B1B]/10 mb-12 mt-0 shadow-lg max-w-full scrollbar-hide'>
+                {INTEGRATION_METHODS.map((method) => {
+                  const isActive = activeMethod === method;
+                  return (
+                    <button
+                      key={method}
+                      onClick={() => setActiveMethod(method)}
+                      className={`relative shrink-0 px-4 sm:px-8 py-2 sm:py-2.5 rounded-full text-[11px] sm:text-[13px] font-bold tracking-tight transition-all duration-200 z-10 ${
+                        isActive ? 'bg-[#5EEAD4] text-[#007F6A]' : 'text-white/40 hover:text-white'
+                      }`}
+                    >
+                      {method.toUpperCase()}
+                    </button>
+                  );
+                })}
+              </div>
+              
+              {/* Substantial Spacer */}
+              <div className="h-10 md:h-12" />
 
-        <motion.div 
-          key={activeMethod}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-          className='w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-20 lg:gap-32 px-4 md:px-8 items-stretch min-h-[450px]'
-        >
-          {/* Left: Text Content */}
-          <div className='flex flex-col justify-between text-left items-start max-w-[440px] h-full py-2'>
-          <div className="flex flex-col items-start">
-            {content.icon && (
-              <>
-                <div className="text-[#007F6A]">
-                  {content.icon}
-                </div>
-                <div className="h-3 md:h-4" />
-              </>
-            )}
-            <h3 className='text-[24px] md:text-[32px] font-medium tracking-tight text-[#1B1B1B] leading-tight whitespace-pre-line'>
-              {content.title}
-            </h3>
-            <div className="h-8 md:h-10" />
-            <p className='text-[16px] md:text-[18px] text-[#1B1B1B]/70 font-medium leading-relaxed max-w-[400px]'>
-              {content.description}
-            </p>
-          </div>
-            
-          </div>
-
-          {/* Right: Command Block */}
-          <div className='flex items-center justify-center'>
-            <div className='w-full bg-[#282c34] rounded-[24px] px-6 md:px-8 py-10 md:py-14 border border-[#3e4451] relative overflow-hidden group shadow-xl'>
-              <pre className='font-mono text-[14px] leading-relaxed text-[#FBBF24] whitespace-pre-wrap break-words'>
-                <code>
-                  {content.code.split('\n').map((line, i) => {
-                    if (line.trim().startsWith('#')) {
-                      return (
-                        <div key={i} style={{ color: '#5c6370', fontStyle: 'italic' }}>
-                          {line}
+              <motion.div 
+                key={activeMethod}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                className='w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-32 px-4 md:px-8 items-stretch min-h-0 lg:min-h-[450px]'
+              >
+                {/* Left: Text Content */}
+                <div className='flex flex-col justify-between text-left items-start max-w-[440px] h-full py-2'>
+                  <div className="flex flex-col items-start">
+                    {content.icon && (
+                      <>
+                        <div className="text-[#007F6A]">
+                          {content.icon}
                         </div>
-                      );
-                    }
-                    
-                    return (
-                      <div key={i}>
-                        {line}
-                      </div>
-                    );
-                  })}
-                </code>
-              </pre>
+                        <div className="h-3 md:h-4" />
+                      </>
+                    )}
+                    <h3 className='text-[24px] md:text-[32px] font-medium tracking-tight text-[#1B1B1B] leading-tight whitespace-pre-line'>
+                      {content.title}
+                    </h3>
+                    <div className="h-8 md:h-10" />
+                    <p className='text-[16px] md:text-[18px] text-[#1B1B1B]/70 font-medium leading-relaxed max-w-[400px]'>
+                      {content.description}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right: Command Block */}
+                <div className='flex items-center justify-center'>
+                  <div className='w-full bg-[#282c34] rounded-[16px] md:rounded-[24px] px-4 md:px-8 py-6 md:py-14 border border-[#3e4451] relative overflow-hidden group shadow-xl'>
+                    <pre className='font-mono text-[11px] sm:text-[12px] md:text-[14px] leading-relaxed text-[#FBBF24] whitespace-pre-wrap break-all sm:break-words'>
+                      <code>
+                        {content.code.split('\n').map((line, i) => {
+                          if (line.trim().startsWith('#')) {
+                            return (
+                              <div key={i} style={{ color: '#5c6370', fontStyle: 'italic' }}>
+                                {line}
+                              </div>
+                            );
+                          }
+                          return (
+                            <div key={i}>
+                              {line}
+                            </div>
+                          );
+                        })}
+                      </code>
+                    </pre>
+                  </div>
+                </div>
+              </motion.div>
+
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
-    </div>
-  </div>
-</div>
-</section>
+    </section>
   );
 }
+

@@ -14,7 +14,7 @@ import Footer from '@/components/footer';
 
 export default function HomePage() {
   return (
-    <main className='selection-teal min-h-screen bg-white'>
+    <main className='selection-teal min-h-screen bg-white overflow-x-hidden'>
       <Nav />
       <Hero />
       <ModelSection />

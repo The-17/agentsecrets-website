@@ -21,7 +21,7 @@ const FOOTER_LINKS = [
 export default function Footer() {
   return (
     <footer id="footer" className="w-full bg-white pt-24 pb-48 px-4 md:px-6 lg:px-8 relative">
-      <div className="max-w-[1400px] mx-auto px-8 md:px-16 lg:px-20">
+      <div className="max-w-[1400px] mx-auto px-2 md:px-16 lg:px-20">
         
         {/* Top Section: Links & Branding */}
         <div className="flex flex-col lg:flex-row justify-between gap-16 lg:gap-24 mb-24">
@@ -86,7 +86,7 @@ export default function Footer() {
 
       {/* Baseline Row: Flanking the Pill */}
       <div className="absolute bottom-8 left-0 right-0 px-4 md:px-6 lg:px-8 pointer-events-none">
-        <div className="max-w-[1400px] mx-auto px-8 md:px-16 lg:px-20 flex flex-col md:flex-row items-center justify-between w-full text-[13px] font-medium tracking-tight">
+        <div className="max-w-[1400px] mx-auto px-2 md:px-16 lg:px-20 flex flex-col md:flex-row items-center justify-between w-full text-[13px] font-medium tracking-tight">
           <p className="text-[#1B1B1B]/40 pointer-events-auto">© 2026 Agent Secrets. All rights reserved.</p>
           <div className="flex items-center gap-1.5 mt-4 md:mt-0 pointer-events-auto">
             <span className="text-[#1B1B1B]/30">built by</span>
