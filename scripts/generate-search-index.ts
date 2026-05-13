@@ -18,6 +18,8 @@ interface SearchDocument {
   group: string;
   label: string;
   body: string;
+  snippet: string;
+  priority: number; // 0-1 educational value score
 }
 
 function stripMarkdown(raw: string): string {
@@ -34,6 +36,48 @@ function stripMarkdown(raw: string): string {
 
 function generateSlug(text: string): string {
   return text.toLowerCase().replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
+}
+
+// Group importance weights — higher = more foundational/educational
+const GROUP_WEIGHT: Record<string, number> = {
+  'Getting Started': 1.0,
+  'Core Concepts': 0.9,
+  'SDK': 0.85,
+  'Proxy': 0.8,
+  'Environments': 0.75,
+  'Integrations': 0.7,
+  'Workspaces': 0.65,
+  'Reference': 0.6,
+};
+
+/**
+ * Compute a 0–1 priority score based on content richness.
+ * Heuristics: body length, code examples, group importance, heading presence.
+ */
+function computePriority(rawLines: string[], group: string, isSubHeading: boolean): number {
+  const raw = rawLines.join('\n');
+  const bodyLen = raw.length;
+  const codeBlocks = (raw.match(/```/g) || []).length / 2; // pairs
+  const hasComingSoon = /coming soon/i.test(raw);
+
+  // Content depth: 0–0.4 based on body length (caps at ~800 chars)
+  const depthScore = Math.min(bodyLen / 800, 1) * 0.4;
+
+  // Code richness: 0–0.2 (caps at 3 code blocks)
+  const codeScore = Math.min(codeBlocks / 3, 1) * 0.2;
+
+  // Group importance: 0–0.3
+  const groupScore = (GROUP_WEIGHT[group] ?? 0.5) * 0.3;
+
+  // Sub-heading penalty: page-level chunks slightly favored
+  const headingPenalty = isSubHeading ? -0.05 : 0;
+
+  // Stub penalty
+  const stubPenalty = hasComingSoon ? -0.3 : 0;
+
+  // Final: clamp 0–1
+  const score = depthScore + codeScore + groupScore + headingPenalty + stubPenalty;
+  return Math.max(0, Math.min(1, Math.round(score * 100) / 100));
 }
 
 function extractChunks(raw: string, sectionId: string, sectionLabel: string, sectionGroup: string): SearchDocument[] {
@@ -56,12 +100,15 @@ function extractChunks(raw: string, sectionId: string, sectionLabel: string, sec
     if (headingMatch) {
       // Save previous chunk
       if (currentBodyLines.length > 0 || currentHeading) {
+        const bodyText = stripMarkdown(currentBodyLines.join(' '));
         chunks.push({
           id: currentHeadingId ? `${sectionId}::${currentHeadingId}` : sectionId,
           title: currentHeading || pageTitle,
           group: sectionGroup,
           label: sectionLabel,
-          body: stripMarkdown(currentBodyLines.join(' ')).slice(0, 2000),
+          body: bodyText.slice(0, 2000),
+          snippet: bodyText.slice(0, 120) + (bodyText.length > 120 ? '…' : ''),
+          priority: computePriority(currentBodyLines, sectionGroup, !!currentHeadingId),
         });
       }
       
@@ -79,12 +126,15 @@ function extractChunks(raw: string, sectionId: string, sectionLabel: string, sec
   
   // Last chunk
   if (currentBodyLines.length > 0 || currentHeading) {
+    const bodyText = stripMarkdown(currentBodyLines.join(' '));
     chunks.push({
       id: currentHeadingId ? `${sectionId}::${currentHeadingId}` : sectionId,
       title: currentHeading || pageTitle,
       group: sectionGroup,
       label: sectionLabel,
-      body: stripMarkdown(currentBodyLines.join(' ')).slice(0, 2000),
+      body: bodyText.slice(0, 2000),
+      snippet: bodyText.slice(0, 120) + (bodyText.length > 120 ? '…' : ''),
+      priority: computePriority(currentBodyLines, sectionGroup, !!currentHeadingId),
     });
   }
   
@@ -112,7 +162,7 @@ function main() {
 
   const miniSearch = new MiniSearch<SearchDocument>({
     fields: ['title', 'body', 'label'],
-    storeFields: ['title', 'group', 'label'],
+    storeFields: ['title', 'group', 'label', 'snippet', 'priority'],
     searchOptions: {
       boost: { title: 4, label: 2, body: 1 },
       fuzzy: 0.2,

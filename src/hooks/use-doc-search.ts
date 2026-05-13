@@ -7,17 +7,18 @@ const RECENT_SEARCHES_KEY = 'as-docs-recent-searches';
 const MAX_RECENT = 5;
 
 export interface SearchResult {
-  id: string;    // Full composite ID: sectionId::headingId
+  id: string;    // Section ID (deduplicated)
   title: string; // Heading or Page Title
   group: string; // Docs Group
   label: string; // Section Label
+  snippet: string; // Content preview
   score: number;
 }
 
 /**
  * Manages recent searches in localStorage.
  */
-function getRecentSearches(): { id: string; label: string; group: string }[] {
+function getRecentSearches(): { id: string; label: string; group: string; snippet: string }[] {
   if (typeof window === 'undefined') return [];
   try {
     const raw = localStorage.getItem(RECENT_SEARCHES_KEY);
@@ -27,7 +28,7 @@ function getRecentSearches(): { id: string; label: string; group: string }[] {
   }
 }
 
-function addRecentSearch(item: { id: string; label: string; group: string }) {
+function addRecentSearch(item: { id: string; label: string; group: string; snippet: string }) {
   if (typeof window === 'undefined') return;
   try {
     const existing = getRecentSearches().filter(r => r.id !== item.id);
@@ -46,7 +47,7 @@ export function useDocSearch() {
   const miniSearchRef = useRef<MiniSearch | null>(null);
   const [isIndexLoaded, setIsIndexLoaded] = useState(false);
   const [isIndexLoading, setIsIndexLoading] = useState(false);
-  const [recentSearches, setRecentSearches] = useState<{ id: string; label: string; group: string }[]>([]);
+  const [recentSearches, setRecentSearches] = useState<{ id: string; label: string; group: string; snippet: string }[]>([]);
 
   // Load recent searches on mount
   useEffect(() => {
@@ -68,7 +69,7 @@ export function useDocSearch() {
       const data = await res.json();
       const ms = MiniSearch.loadJSON<SearchResult>(JSON.stringify(data), {
         fields: ['title', 'body', 'label'],
-        storeFields: ['title', 'group', 'label'],
+        storeFields: ['title', 'group', 'label', 'snippet', 'priority'],
         searchOptions: {
           boost: { title: 4, label: 2, body: 1 },
           fuzzy: 0.2,
@@ -94,23 +95,38 @@ export function useDocSearch() {
     const ms = await ensureIndex();
     if (!ms) return [];
 
-    const results = ms.search(trimmed, {
+    const raw = ms.search(trimmed, {
       boost: { title: 4, label: 2, body: 1 },
       fuzzy: 0.2,
       prefix: true,
-    }) as (MiniSearchResult & { title: string; group: string; label: string })[];
+    }) as (MiniSearchResult & { title: string; group: string; label: string; snippet: string; priority: number })[];
 
-    return results.slice(0, 8).map(r => ({
-      id: r.id,
-      title: r.title,
-      group: r.group,
-      label: r.label,
-      score: r.score,
-    }));
+    // Deduplicate: keep only the highest-scoring chunk per section
+    // Apply priority as a gentle score multiplier (0.5 + priority)
+    const seen = new Map<string, SearchResult>();
+    for (const r of raw) {
+      const sectionId = String(r.id).split('::')[0];
+      const priority = r.priority ?? 0.5;
+      const boostedScore = r.score * (0.5 + priority);
+      if (!seen.has(sectionId) || boostedScore > (seen.get(sectionId)!.score)) {
+        seen.set(sectionId, {
+          id: sectionId,
+          title: r.title,
+          group: r.group,
+          label: r.title || r.label,
+          snippet: r.snippet || '',
+          score: boostedScore,
+        });
+      }
+    }
+
+    return Array.from(seen.values())
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 8);
   }, [ensureIndex]);
 
   // Track a navigation as a recent search
-  const trackRecent = useCallback((item: { id: string; label: string; group: string }) => {
+  const trackRecent = useCallback((item: { id: string; label: string; group: string; snippet: string }) => {
     addRecentSearch(item);
     setRecentSearches(getRecentSearches());
   }, []);

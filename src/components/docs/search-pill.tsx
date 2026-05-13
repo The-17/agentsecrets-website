@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useLayoutEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Menu, FileText, Clock, ArrowRight, CornerDownLeft } from 'lucide-react';
+import { Search, Menu, FileText, Clock, ArrowRight, CornerDownLeft, Hash, BookOpen } from 'lucide-react';
 import { useDocSearch, type SearchResult } from '@/hooks/use-doc-search';
 import { DOCS_SECTIONS } from '@/lib/docs-sections';
 
@@ -25,14 +25,36 @@ const SUGGESTED_SECTIONS = [
 
 function resolveSectionMeta(id: string) {
   const s = DOCS_SECTIONS.find((sec) => sec.id === id);
-  return s ? { id: s.id, label: s.label, group: s.group } : null;
+  const defaultSnippets: Record<string, string> = {
+    'quick-start': 'Get up and running with AgentSecrets in under 5 minutes.',
+    'installation': 'Detailed guide on installing the AgentSecrets CLI and SDK.',
+    'what-is-agentsecrets': 'Understanding the core mission and architecture of the platform.',
+    'proxy/overview': 'Learn how our zero-knowledge proxy keeps your keys safe.',
+    'integrations/claude-desktop': 'Connect AgentSecrets directly to your Claude Desktop app.',
+    'zero-knowledge-difference': 'Why our security model is superior to traditional vaulting.',
+    'concepts/proxy-model': 'Deep dive into the three-layer proxy security model.',
+  };
+  return s ? { 
+    id: s.id, 
+    label: s.label, 
+    group: s.group,
+    snippet: defaultSnippets[id] || `Overview of ${s.label} and its role in the ecosystem.`
+  } : null;
+}
+
+/** Split a label into exactly two lines at the midpoint, like features grid titles */
+function splitToTwoLines(label: string): string {
+  const words = label.split(' ');
+  if (words.length <= 1) return label;
+  const mid = Math.ceil(words.length / 2);
+  return words.slice(0, mid).join(' ') + '\n' + words.slice(mid).join(' ');
 }
 
 /* ──────────────────────────── Component ──────────────────────────── */
 
 interface SearchPillProps {
   onMenuClick?: () => void;
-  onNavigate?: (sectionId: string) => void;
+  onNavigate?: (sectionId: string, headingId?: string) => void;
 }
 
 export default function SearchPill({ onMenuClick, onNavigate }: SearchPillProps) {
@@ -42,12 +64,12 @@ export default function SearchPill({ onMenuClick, onNavigate }: SearchPillProps)
   const [isFocused, setIsFocused] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
 
   /* ── Refs ── */
   const inputRef = useRef<HTMLInputElement>(null);
   const mirrorRef = useRef<HTMLDivElement>(null);
   const inputContainerRef = useRef<HTMLDivElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
   const [growCount, setGrowCount] = useState(0);
 
   /* ── Search hook ── */
@@ -77,20 +99,19 @@ export default function SearchPill({ onMenuClick, onNavigate }: SearchPillProps)
     ensureIndex();
   }, [ensureIndex]);
 
-  /* ── Close panel on outside click ── */
+  /* ── Close panel on Escape ── */
   useEffect(() => {
     if (!isFocused) return;
-    const handleClick = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (
-        panelRef.current && !panelRef.current.contains(target) &&
-        inputRef.current && !inputRef.current.contains(target)
-      ) {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setQuery('');
+        setResults([]);
         setIsFocused(false);
+        inputRef.current?.blur();
       }
     };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
   }, [isFocused]);
 
   /* ── Debounced search ── */
@@ -110,13 +131,16 @@ export default function SearchPill({ onMenuClick, onNavigate }: SearchPillProps)
 
   /* ── Navigate to a result ── */
   const navigateTo = useCallback(
-    (id: string, label: string, group: string) => {
-      trackRecent({ id, label, group });
+    (id: string, label: string, group: string, snippet: string = '') => {
+      trackRecent({ id, label, group, snippet });
       setQuery('');
       setResults([]);
       setIsFocused(false);
       inputRef.current?.blur();
-      onNavigate?.(id);
+
+      // Parse composite ID for deep linking
+      const [sectionId, headingId] = id.includes('::') ? id.split('::') : [id, undefined];
+      onNavigate?.(sectionId, headingId);
     },
     [onNavigate, trackRecent],
   );
@@ -191,153 +215,221 @@ export default function SearchPill({ onMenuClick, onNavigate }: SearchPillProps)
     <div className='fixed bottom-6 sm:bottom-8 left-0 right-0 z-[100] px-5 flex justify-center pointer-events-none'>
       <div className='relative flex flex-col items-center max-w-full pointer-events-auto'>
 
-        {/* ─── Overlay ─── */}
+        {/* ─── Overlay + Card Layout ─── */}
         <AnimatePresence>
           {showPanel && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className='fixed inset-0 z-[-1] bg-[#1B1B1B]/10 backdrop-blur-[2px] pointer-events-auto'
-              onClick={() => setIsFocused(false)}
-            />
-          )}
-        </AnimatePresence>
-
-        {/* ─── Results Panel ─── */}
-        <AnimatePresence>
-          {showPanel && (
-            <motion.div
-              ref={panelRef}
-              initial={{ opacity: 0, y: 8, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 8, scale: 0.97 }}
-              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className='absolute bottom-full mb-3 w-[92vw] sm:w-[440px] max-h-[60vh] bg-white rounded-2xl shadow-2xl border border-black/[0.06] overflow-hidden flex flex-col'
+              transition={{ duration: 0.3 }}
+              className='fixed inset-0 z-[-1] bg-white pointer-events-auto overflow-y-auto flex flex-col items-center'
+              onClick={(e) => { if (e.target === e.currentTarget) setIsFocused(false); }}
             >
-              {hasQuery ? (
-                /* ── Search Results ── */
-                results.length > 0 ? (
-                  <div className='flex flex-col'>
-                    <div className='px-4 pt-3 pb-2 shrink-0'>
-                      <span className='text-[11px] font-bold tracking-[0.08em] uppercase text-[#1B1B1B]/30'>
-                        Results
-                      </span>
-                    </div>
-                    <div className='overflow-y-auto max-h-[50vh] overscroll-contain'>
-                      {results.map((r, idx) => (
-                        <button
-                          key={r.id}
-                          onClick={() => navigateTo(r.id, r.label, r.group)}
-                          onMouseEnter={() => setActiveIdx(idx)}
-                          className={`w-full text-left px-4 py-3 flex items-center gap-3 transition-colors ${
-                            idx === activeIdx
-                              ? 'bg-[#f0fdfa]'
-                              : 'hover:bg-[#fafafa]'
-                          }`}
-                        >
-                          {idx === activeIdx && (
-                            <div className='w-[3px] h-5 bg-[#0d9488] rounded-full shrink-0 absolute left-0' />
-                          )}
-                          <FileText size={14} className='text-[#0d9488] shrink-0' />
-                          <div className='flex flex-col min-w-0'>
-                            <span className='text-[14px] font-medium text-[#1B1B1B] truncate'>
-                              {r.label}
-                            </span>
-                            <span className='text-[12px] text-[#1B1B1B]/40 truncate'>
+              <div className='w-full max-w-[820px] mx-auto px-8 pt-32 pb-48 flex flex-col gap-[80px]'>
+                {hasQuery ? (
+                  results.length > 0 ? (
+                    <>
+                      <div className='text-center mb-10'>
+                        <h3 className='text-[13px] font-medium text-[#1B1B1B]/30 tracking-wide'>
+                          {results.length} result{results.length !== 1 ? 's' : ''}
+                        </h3>
+                      </div>
+                      <div className='grid grid-cols-1 sm:grid-cols-2 gap-5'>
+                        {results.map((r, idx) => (
+                          <motion.button
+                            key={r.id}
+                            onClick={() => navigateTo(r.id, r.label, r.group, r.snippet)}
+                            onMouseEnter={() => setActiveIdx(idx)}
+                            whileHover={{ y: -4 }}
+                            className={`text-left bg-white rounded-2xl border p-6 min-h-[180px] flex flex-col gap-3 transition-all duration-200 cursor-pointer ${
+                              idx === activeIdx
+                                ? 'border-[#0d9488]/15 shadow-[0_4px_20px_rgba(0,0,0,0.04)] scale-[1.01]'
+                                : 'border-transparent hover:border-black/[0.04] shadow-[0_1px_3px_rgba(0,0,0,0.02)]'
+                            }`}
+                          >
+                            <span className='inline-flex items-center self-start text-[9px] font-bold tracking-[0.1em] uppercase text-[#0d9488] bg-[#ECFDF5] rounded-full px-3 py-1'>
                               {r.group}
                             </span>
-                          </div>
-                          <ArrowRight size={12} className={`ml-auto shrink-0 transition-opacity ${idx === activeIdx ? 'text-[#0d9488] opacity-100' : 'opacity-0'}`} />
-                        </button>
-                      ))}
-                    </div>
-                    {/* Footer hints */}
-                    <div className='px-4 py-2 border-t border-black/[0.04] flex items-center gap-4 text-[11px] text-[#1B1B1B]/30 font-medium'>
-                      <span className='flex items-center gap-1'>
-                        <CornerDownLeft size={10} /> select
-                      </span>
-                      <span>↑↓ navigate</span>
-                      <span>esc close</span>
-                    </div>
-                  </div>
-                ) : (
-                  /* ── No results ── */
-                  <div className='px-4 py-8 text-center'>
-                    <p className='text-[14px] text-[#1B1B1B]/40 font-medium'>
-                      No results for &ldquo;{query.trim()}&rdquo;
-                    </p>
-                    <p className='text-[12px] text-[#1B1B1B]/25 mt-1'>
-                      Try a different search term
-                    </p>
-                  </div>
-                )
-              ) : (
-                /* ── Suggestions + Recent ── */
-                <div className='flex flex-col overflow-y-auto max-h-[50vh] overscroll-contain'>
-                  {/* Recent searches */}
-                  {recentSearches.length > 0 && (
-                    <>
-                      <div className='px-4 pt-3 pb-2'>
-                        <span className='text-[11px] font-bold tracking-[0.08em] uppercase text-[#1B1B1B]/30'>
-                          Recent
-                        </span>
-                      </div>
-                      {recentSearches.map((item) => (
-                        <button
-                          key={`recent-${item.id}`}
-                          onClick={() => navigateTo(item.id, item.label, item.group)}
-                          className='w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-[#fafafa] transition-colors'
-                        >
-                          <Clock size={13} className='text-[#1B1B1B]/25 shrink-0' />
-                          <span className='text-[13px] font-medium text-[#1B1B1B]/70 truncate'>
-                            {item.label}
-                          </span>
-                          <span className='text-[11px] text-[#1B1B1B]/25 ml-auto shrink-0 truncate'>
-                            {item.group}
-                          </span>
-                        </button>
-                      ))}
-                      <div className='h-px bg-black/[0.04] mx-4 my-1' />
-                    </>
-                  )}
-
-                  {/* Curated suggestions */}
-                  {SUGGESTED_SECTIONS.map((group) => (
-                    <div key={group.category}>
-                      <div className='px-4 pt-3 pb-2'>
-                        <span className='text-[11px] font-bold tracking-[0.08em] uppercase text-[#1B1B1B]/30'>
-                          {group.category}
-                        </span>
-                      </div>
-                      {group.items.map((id) => {
-                        const meta = resolveSectionMeta(id);
-                        if (!meta) return null;
-                        return (
-                          <button
-                            key={id}
-                            onClick={() => navigateTo(meta.id, meta.label, meta.group)}
-                            className='w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-[#fafafa] transition-colors'
-                          >
-                            <FileText size={13} className='text-[#0d9488]/50 shrink-0' />
-                            <span className='text-[13px] font-medium text-[#1B1B1B]/70 truncate'>
-                              {meta.label}
+                            <span className='text-[16px] font-semibold text-[#1B1B1B] leading-snug line-clamp-2 mt-1'>
+                              {r.label}
                             </span>
-                          </button>
-                        );
-                      })}
+                            {r.snippet && (
+                              <span className='text-[12px] text-[#1B1B1B]/35 leading-[1.6] line-clamp-2'>
+                                {r.snippet}
+                              </span>
+                            )}
+                            <div className='flex items-center gap-3 mt-auto pt-3'>
+                              <span className='flex items-center gap-1.5 text-[10px] text-[#1B1B1B]/20 font-medium'>
+                                <BookOpen size={10} />
+                                Docs
+                              </span>
+                              <span className={`flex items-center gap-1 text-[10px] font-semibold ml-auto transition-opacity duration-200 ${
+                                idx === activeIdx ? 'text-[#0d9488] opacity-100' : 'opacity-0'
+                              }`}>
+                                Read <ArrowRight size={10} />
+                              </span>
+                            </div>
+                          </motion.button>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className='text-center pt-32'>
+                      <p className='text-[16px] text-[#1B1B1B]/25 font-medium'>
+                        No results for &ldquo;{query.trim()}&rdquo;
+                      </p>
+                      <p className='text-[13px] text-[#1B1B1B]/15 mt-3'>
+                        Try a different search term
+                      </p>
                     </div>
-                  ))}
+                  )
+                ) : (
+                  <>
+                    {/* ── Recents ── */}
+                    {recentSearches.length > 0 && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                        className='flex flex-col gap-[24px]'
+                      >
+                        <h3 className='text-[22px] font-bold text-[#1B1B1B]/85'>
+                          Recents
+                        </h3>
+                        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-16 gap-y-10'>
+                          {recentSearches.map((item) => {
+                            const isHovered = hoveredItemId === `recent-${item.id}`;
+                            return (
+                              <motion.button
+                                key={`recent-${item.id}`}
+                                onClick={() => navigateTo(item.id, item.label, item.group, item.snippet)}
+                                onMouseEnter={() => setHoveredItemId(`recent-${item.id}`)}
+                                onMouseLeave={() => setHoveredItemId(null)}
+                                animate={{
+                                  y: isHovered ? -4 : 0,
+                                  opacity: hoveredItemId !== null && !isHovered ? 0.8 : 1
+                                }}
+                                transition={{ duration: 0.3, ease: "easeOut" }}
+                                className='text-left flex flex-col gap-6 group cursor-pointer'
+                              >
+                                <motion.div 
+                                  animate={{ 
+                                    backgroundColor: isHovered ? '#0d94881a' : '#F5F5F7',
+                                    color: isHovered ? '#0d9488' : 'rgba(27, 27, 27, 0.6)'
+                                  }}
+                                  className='inline-flex items-center self-start text-[9px] font-bold tracking-wide rounded-full px-2.5 py-1 transition-colors'
+                                >
+                                  {item.group}
+                                </motion.div>
+                                <div className='flex flex-col gap-4'>
+                                  <motion.h4 
+                                    animate={{ color: isHovered ? '#0d9488' : '#1B1B1B' }}
+                                    className='text-[22px] font-medium leading-[1.15] tracking-[-0.035em] whitespace-pre-line line-clamp-2 min-h-[2.3em]'
+                                  >
+                                    {splitToTwoLines(item.label)}
+                                  </motion.h4>
+                                  <motion.p 
+                                    animate={{ color: isHovered ? '#0d9488' : 'rgba(27, 27, 27, 0.6)' }}
+                                    className='text-[13.5px] leading-[1.65] line-clamp-3 font-medium'
+                                  >
+                                    {item.snippet || 'Explore more about this section.'}
+                                  </motion.p>
+                                </div>
+                                <div className='flex items-center gap-3 mt-auto opacity-30'>
+                                  <span className='flex items-center gap-1 text-[9px] font-bold tracking-wider uppercase'><Clock size={10} /> 2h ago</span>
+                                  <span className='flex items-center gap-1 text-[9px] font-bold tracking-wider uppercase'><FileText size={10} /> PDF</span>
+                                </div>
+                              </motion.button>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
 
-                  {/* Loading indicator */}
-                  {isIndexLoading && (
-                    <div className='px-4 py-2 text-center'>
-                      <span className='text-[11px] text-[#1B1B1B]/25'>Loading search index…</span>
-                    </div>
-                  )}
-                </div>
-              )}
+                    {/* ── Popular / Suggestions ── */}
+                    {SUGGESTED_SECTIONS.map((group, groupIdx) => (
+                      <motion.div 
+                        key={group.category} 
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.8, ease: "easeOut", delay: groupIdx * 0.1 }}
+                        className='flex flex-col gap-[24px]'
+                      >
+                        <h3 className='text-[22px] font-bold text-[#1B1B1B]/85'>
+                          {group.category}
+                        </h3>
+                        <div className='grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6'>
+                          {group.items.map((id) => {
+                            const meta = resolveSectionMeta(id);
+                            if (!meta) return null;
+                            const isHovered = hoveredItemId === `suggested-${id}`;
+                            return (
+                              <motion.button
+                                key={id}
+                                onClick={() => navigateTo(meta.id, meta.label, meta.group, meta.snippet)}
+                                onMouseEnter={() => setHoveredItemId(`suggested-${id}`)}
+                                onMouseLeave={() => setHoveredItemId(null)}
+                                animate={{
+                                  y: isHovered ? -4 : 0,
+                                  opacity: hoveredItemId !== null && !isHovered ? 0.8 : 1
+                                }}
+                                transition={{ duration: 0.3, ease: "easeOut" }}
+                                className='text-left bg-white rounded-[24px] p-8 flex items-center gap-8 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.06)] transition-all duration-300 cursor-pointer group border border-black/[0.01]'
+                              >
+                                <div className='flex flex-col gap-4 flex-1 min-w-0'>
+                                  <motion.div 
+                                    animate={{ 
+                                      backgroundColor: isHovered ? '#0d94881a' : '#F5F5F7',
+                                      color: isHovered ? '#0d9488' : 'rgba(27, 27, 27, 0.6)'
+                                    }}
+                                    className='inline-flex items-center self-start text-[9px] font-bold tracking-wide rounded-full px-3 py-1.5 transition-colors'
+                                  >
+                                    {meta.group}
+                                  </motion.div>
+                                  <motion.h4 
+                                    animate={{ color: isHovered ? '#0d9488' : '#1B1B1B' }}
+                                    className='text-[24px] font-medium leading-[1.1] tracking-[-0.03em] whitespace-pre-line line-clamp-2 min-h-[2.2em]'
+                                  >
+                                    {splitToTwoLines(meta.label)}
+                                  </motion.h4>
+                                  <motion.p 
+                                    animate={{ color: isHovered ? '#0d9488' : 'rgba(27, 27, 27, 0.6)' }}
+                                    className='text-[14px] leading-[1.6] line-clamp-2'
+                                  >
+                                    {meta.snippet}
+                                  </motion.p>
+                                </div>
+                                <div className='w-[160px] h-[120px] rounded-[16px] bg-[#EBEBEB] shrink-0 relative overflow-hidden flex items-center justify-center border border-black/[0.03]'>
+                                  <div className='absolute bottom-4 left-1/2 -translate-x-1/2'>
+                                    <motion.span 
+                                      animate={{ 
+                                        backgroundColor: isHovered ? '#1B1B1B' : '#FFFFFF',
+                                        color: isHovered ? '#FFFFFF' : '#1B1B1B'
+                                      }}
+                                      className='text-[11px] font-bold px-4 py-1.5 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex items-center gap-1.5 transition-colors'
+                                    >
+                                      Read <ArrowRight size={12} />
+                                    </motion.span>
+                                  </div>
+                                </div>
+                              </motion.button>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    ))}
+
+                    {isIndexLoading && (
+                      <div className='text-center py-12'>
+                        <span className='text-[12px] text-[#1B1B1B]/15'>Loading search index…</span>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
