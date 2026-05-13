@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useLayoutEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Menu, FileText, Clock, ArrowRight, CornerDownLeft, Hash, BookOpen } from 'lucide-react';
+import { Search, Menu, FileText, Clock, ArrowRight, CornerDownLeft, Hash, BookOpen, ChevronRight, X } from 'lucide-react';
 import { useDocSearch, type SearchResult } from '@/hooks/use-doc-search';
 import { DOCS_SECTIONS } from '@/lib/docs-sections';
 
@@ -62,9 +62,37 @@ export default function SearchPill({ onMenuClick, onNavigate }: SearchPillProps)
   const [isReady, setIsReady] = useState(false);
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  const showPanel = isFocused && isReady;
   const [results, setResults] = useState<SearchResult[]>([]);
-  const [activeIdx, setActiveIdx] = useState(0);
+  const [activeIdx, setActiveIdx] = useState(-1);
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!showPanel || query) return;
+
+    const sections = ['section-recents', 'section-getting-started', 'section-popular'];
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
+          }
+        });
+      },
+      { 
+        threshold: 0.2,
+        rootMargin: '-80px 0px -60% 0px' 
+      }
+    );
+
+    sections.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, [showPanel, query]);
 
   /* ── Refs ── */
   const inputRef = useRef<HTMLInputElement>(null);
@@ -206,7 +234,6 @@ export default function SearchPill({ onMenuClick, onNavigate }: SearchPillProps)
   const extraWidth = growCount * step;
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
   const baseW = isMobile ? 140 : 185;
-  const showPanel = isFocused && isReady;
 
   /* ── Determine panel content ── */
   const hasQuery = query.trim().length > 0;
@@ -223,11 +250,24 @@ export default function SearchPill({ onMenuClick, onNavigate }: SearchPillProps)
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className='fixed inset-0 z-[-1] bg-white pointer-events-auto overflow-y-auto flex flex-col items-center'
-              onClick={(e) => { if (e.target === e.currentTarget) setIsFocused(false); }}
+              className='fixed inset-0 z-[999] bg-white pointer-events-auto overflow-y-auto flex flex-col items-center'
             >
-              <div className='w-full max-w-[820px] mx-auto px-8 pt-32 pb-48 flex flex-col gap-[80px]'>
-                {hasQuery ? (
+              {/* Close Button */}
+              <button 
+                onClick={() => setIsFocused(false)}
+                className='fixed top-24 right-12 p-2 rounded-full bg-black/5 hover:bg-black/10 transition-colors z-[1000]'
+                aria-label='Close search'
+              >
+                <X size={18} className='text-[#1B1B1B]/40' />
+              </button>
+
+              <div className='w-full max-w-[1400px] mx-auto px-8 pt-32 pb-48 flex flex-row relative'>
+                {/* Left Ghost Spacer for Centering */}
+                <div className='hidden lg:block w-[260px] shrink-0' aria-hidden="true" />
+
+                {/* Main Content Area */}
+                <div className='flex-1 max-w-[820px] mx-auto flex flex-col gap-[100px]'>
+                  {hasQuery ? (
                   results.length > 0 ? (
                     <>
                       <div className='text-center mb-10'>
@@ -289,13 +329,13 @@ export default function SearchPill({ onMenuClick, onNavigate }: SearchPillProps)
                     {/* ── Recents ── */}
                     {recentSearches.length > 0 && (
                       <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 40 }}
                         whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
+                        viewport={{ once: true, margin: '-100px' }}
                         transition={{ duration: 0.8, ease: "easeOut" }}
                         className='flex flex-col gap-[24px]'
                       >
-                        <h3 className='text-[22px] font-bold text-[#1B1B1B]/85'>
+                        <h3 id="section-recents" className='text-[22px] font-bold text-[#1B1B1B]/60'>
                           Recents
                         </h3>
                         <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-16 gap-y-10'>
@@ -349,78 +389,108 @@ export default function SearchPill({ onMenuClick, onNavigate }: SearchPillProps)
                     )}
 
                     {/* ── Popular / Suggestions ── */}
-                    {SUGGESTED_SECTIONS.map((group, groupIdx) => (
-                      <motion.div 
-                        key={group.category} 
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.8, ease: "easeOut", delay: groupIdx * 0.1 }}
-                        className='flex flex-col gap-[24px]'
-                      >
-                        <h3 className='text-[22px] font-bold text-[#1B1B1B]/85'>
-                          {group.category}
-                        </h3>
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6'>
-                          {group.items.map((id) => {
-                            const meta = resolveSectionMeta(id);
-                            if (!meta) return null;
-                            const isHovered = hoveredItemId === `suggested-${id}`;
-                            return (
-                              <motion.button
-                                key={id}
-                                onClick={() => navigateTo(meta.id, meta.label, meta.group, meta.snippet)}
-                                onMouseEnter={() => setHoveredItemId(`suggested-${id}`)}
-                                onMouseLeave={() => setHoveredItemId(null)}
-                                animate={{
-                                  y: isHovered ? -4 : 0,
-                                  opacity: hoveredItemId !== null && !isHovered ? 0.8 : 1
-                                }}
-                                transition={{ duration: 0.3, ease: "easeOut" }}
-                                className='text-left bg-white rounded-[24px] p-8 flex items-center gap-8 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.06)] transition-all duration-300 cursor-pointer group border border-black/[0.01]'
-                              >
-                                <div className='flex flex-col gap-4 flex-1 min-w-0'>
-                                  <motion.div 
-                                    animate={{ 
-                                      backgroundColor: isHovered ? '#0d94881a' : '#F5F5F7',
-                                      color: isHovered ? '#0d9488' : 'rgba(27, 27, 27, 0.6)'
+                    {SUGGESTED_SECTIONS.map((group, groupIdx) => {
+                      const isGettingStarted = group.category === 'Getting Started';
+                      
+                      return (
+                        <motion.div 
+                          key={group.category} 
+                          initial={{ opacity: 0, y: 40 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          viewport={{ once: true, margin: '-100px' }}
+                          transition={{ duration: 0.8, ease: "easeOut", delay: groupIdx * 0.1 }}
+                          className='flex flex-col gap-[32px]'
+                        >
+                          <h3 id={`section-${group.category.toLowerCase().replace(/ /g, '-')}`} className='text-[22px] font-bold text-[#1B1B1B]/60'>
+                            {group.category}
+                          </h3>
+                          
+                          <div className={`grid grid-cols-1 ${isGettingStarted ? 'lg:grid-cols-3 gap-4 lg:-mx-12' : 'md:grid-cols-2 gap-x-8 gap-y-6'}`}>
+                            {group.items.map((id, itemIdx) => {
+                              const meta = resolveSectionMeta(id);
+                              if (!meta) return null;
+                              const isHovered = hoveredItemId === `suggested-${id}`;
+                              
+                              if (isGettingStarted) {
+                                return (
+                                  <motion.button
+                                    key={id}
+                                    onClick={() => navigateTo(meta.id, meta.label, meta.group, meta.snippet)}
+                                    onMouseEnter={() => setHoveredItemId(`suggested-${id}`)}
+                                    onMouseLeave={() => setHoveredItemId(null)}
+                                    animate={{
+                                      y: isHovered ? -8 : 0,
+                                      opacity: hoveredItemId !== null && !isHovered ? 0.5 : 1,
                                     }}
-                                    className='inline-flex items-center self-start text-[9px] font-bold tracking-wide rounded-full px-3 py-1.5 transition-colors'
+                                    transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                                    className='text-left bg-white rounded-[24px] p-8 flex flex-col gap-8 shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_32px_80px_rgba(0,0,0,0.08)] transition-all duration-500 cursor-pointer group border border-black/[0.03] h-full relative'
                                   >
-                                    {meta.group}
-                                  </motion.div>
-                                  <motion.h4 
-                                    animate={{ color: isHovered ? '#0d9488' : '#1B1B1B' }}
-                                    className='text-[24px] font-medium leading-[1.1] tracking-[-0.03em] whitespace-pre-line line-clamp-2 min-h-[2.2em]'
-                                  >
-                                    {splitToTwoLines(meta.label)}
-                                  </motion.h4>
-                                  <motion.p 
-                                    animate={{ color: isHovered ? '#0d9488' : 'rgba(27, 27, 27, 0.6)' }}
-                                    className='text-[14px] leading-[1.6] line-clamp-2'
-                                  >
-                                    {meta.snippet}
-                                  </motion.p>
-                                </div>
-                                <div className='w-[160px] h-[120px] rounded-[16px] bg-[#EBEBEB] shrink-0 relative overflow-hidden flex items-center justify-center border border-black/[0.03]'>
-                                  <div className='absolute bottom-4 left-1/2 -translate-x-1/2'>
-                                    <motion.span 
-                                      animate={{ 
-                                        backgroundColor: isHovered ? '#1B1B1B' : '#FFFFFF',
-                                        color: isHovered ? '#FFFFFF' : '#1B1B1B'
-                                      }}
-                                      className='text-[11px] font-bold px-4 py-1.5 rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.08)] flex items-center gap-1.5 transition-colors'
-                                    >
-                                      Read <ArrowRight size={12} />
-                                    </motion.span>
+                                    <div className='flex flex-col gap-3 flex-1'>
+                                      <motion.h4 
+                                        animate={{ color: isHovered ? '#0d9488' : '#1B1B1B' }}
+                                        className='text-[22px] font-semibold leading-[1.2] tracking-[-0.03em] w-full'
+                                      >
+                                        {meta.label}
+                                      </motion.h4>
+                                      <motion.p 
+                                        animate={{ color: isHovered ? '#0d9488' : 'rgba(27, 27, 27, 0.3)' }}
+                                        className='text-[14px] leading-[1.6] line-clamp-3 font-medium'
+                                        style={{ textWrap: 'pretty' } as any}
+                                      >
+                                        {meta.snippet}
+                                      </motion.p>
+                                    </div>
+
+                                    <div className='mt-auto pt-4'>
+                                      <motion.span 
+                                        animate={{ 
+                                          opacity: isHovered ? 1 : 0.5,
+                                          backgroundColor: 'transparent',
+                                          color: isHovered ? '#0d9488' : '#1B1B1B',
+                                          borderColor: isHovered ? '#0d9488' : 'rgba(0,0,0,0.1)'
+                                        }}
+                                        transition={{ duration: 0.3, ease: "easeOut" }}
+                                        className='flex items-center justify-center gap-2 text-[12px] font-bold px-6 py-2.5 rounded-[12px] border w-full group/btn'
+                                      >
+                                        Start Learning 
+                                        <ChevronRight 
+                                          size={14} 
+                                          className={`transition-transform duration-300 ${isHovered ? 'translate-x-0.5' : ''}`} 
+                                        />
+                                      </motion.span>
+                                    </div>
+                                  </motion.button>
+                                );
+                              }
+
+                              return (
+                                <motion.button
+                                  key={id}
+                                  onClick={() => navigateTo(meta.id, meta.label, meta.group, meta.snippet)}
+                                  onMouseEnter={() => setHoveredItemId(`suggested-${id}`)}
+                                  onMouseLeave={() => setHoveredItemId(null)}
+                                  animate={{
+                                    y: isHovered ? -4 : 0,
+                                    opacity: hoveredItemId !== null && !isHovered ? 0.8 : 1
+                                  }}
+                                  transition={{ duration: 0.3, ease: "easeOut" }}
+                                  className='text-left bg-white rounded-[24px] p-8 flex items-center gap-8 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.06)] transition-all duration-300 cursor-pointer group border border-black/[0.01]'
+                                >
+                                  <div className='flex items-center justify-center w-12 h-12 rounded-xl bg-[#F5F5F7] group-hover:bg-[#0d94881a] transition-colors'>
+                                    <FileText size={20} className='text-[#1B1B1B]/40 group-hover:text-[#0d9488] transition-colors' />
                                   </div>
-                                </div>
-                              </motion.button>
-                            );
-                          })}
-                        </div>
-                      </motion.div>
-                    ))}
+                                  <div className='flex flex-col gap-1'>
+                                    <span className='text-[10px] font-bold tracking-wider text-[#1B1B1B]/30 uppercase'>{meta.group}</span>
+                                    <h4 className='text-[16px] font-semibold text-[#1B1B1B] group-hover:text-[#0d9488] transition-colors'>{meta.label}</h4>
+                                  </div>
+                                  <ArrowRight size={16} className='ml-auto text-[#1B1B1B]/10 group-hover:text-[#0d9488] group-hover:translate-x-1 transition-all' />
+                                </motion.button>
+                              );
+                            })}
+                          </div>
+                        </motion.div>
+                      );
+                    })}
 
                     {isIndexLoading && (
                       <div className='text-center py-12'>
@@ -430,6 +500,35 @@ export default function SearchPill({ onMenuClick, onNavigate }: SearchPillProps)
                   </>
                 )}
               </div>
+
+              {/* Sidebar Navigation */}
+              {!hasQuery && (
+                <div className='hidden lg:block w-[260px] shrink-0 sticky top-48 h-fit border-l border-black/[0.05] pl-12 self-start'>
+                  <div className='flex flex-col gap-6'>
+                    <nav className='flex flex-col gap-4'>
+                      {[
+                        { id: 'section-recents', label: 'recents', show: recentSearches.length > 0 },
+                        { id: 'section-getting-started', label: 'getting started', show: true },
+                        { id: 'section-popular', label: 'popular', show: true }
+                      ].filter(l => l.show).map((link) => {
+                        const isActive = activeSection === link.id;
+                        return (
+                          <button
+                            key={link.id}
+                            onClick={() => document.getElementById(link.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                            className='flex items-center group text-left transition-all duration-300'
+                          >
+                            <span className={`text-[13px] font-medium transition-colors duration-300 ${isActive ? 'text-[#0d9488]' : 'text-[#1B1B1B]/40 group-hover:text-[#1B1B1B]/70'}`}>
+                              {link.label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </nav>
+                  </div>
+                </div>
+              )}
+            </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -437,24 +536,32 @@ export default function SearchPill({ onMenuClick, onNavigate }: SearchPillProps)
         {/* ─── Outer Pill ─── */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0, width: 'auto' }}
+          animate={{ 
+            opacity: 1, 
+            y: 0, 
+            width: 'auto',
+            backgroundColor: isFocused ? '#005E50' : '#F8F8F9',
+            borderColor: isFocused ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'
+          }}
           transition={{
             opacity: { duration: 1.2, ease: [0.16, 1, 0.3, 1] },
             y: { duration: 1.2, ease: [0.16, 1, 0.3, 1] },
+            backgroundColor: { duration: 0.4 },
+            borderColor: { duration: 0.4 }
           }}
-          className='bg-[#005E50] rounded-full shadow-lg flex items-center border border-white/[0.08] h-[48px] sm:h-[52px] max-w-[92vw] sm:max-w-[600px] overflow-hidden'
+          className='relative z-[1001] rounded-full shadow-lg flex items-center border h-[48px] sm:h-[52px] max-w-[92vw] sm:max-w-[600px] overflow-hidden'
           style={{ paddingLeft: onMenuClick ? '6px' : '8px', paddingRight: '8px' }}
         >
           {onMenuClick && (
             <button
               onClick={onMenuClick}
-              className='lg:hidden flex items-center justify-center w-[40px] h-[40px] rounded-full text-white/90 hover:bg-white/10 transition-colors shrink-0'
+              className={`lg:hidden flex items-center justify-center w-[40px] h-[40px] rounded-full transition-colors shrink-0 ${isFocused ? 'text-white/90 hover:bg-white/10' : 'text-[#1B1B1B]/60 hover:bg-black/5'}`}
             >
               <Menu size={18} />
             </button>
           )}
 
-          <div className='flex items-center justify-center w-[36px] sm:w-[40px] h-[36px] sm:h-[40px] text-white/70 shrink-0'>
+          <div className={`flex items-center justify-center w-[36px] sm:w-[40px] h-[36px] sm:h-[40px] shrink-0 transition-colors ${isFocused ? 'text-white/70' : 'text-[#1B1B1B]/40'}`}>
             <Search size={18} />
           </div>
 
@@ -463,7 +570,7 @@ export default function SearchPill({ onMenuClick, onNavigate }: SearchPillProps)
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className='relative bg-white rounded-full h-[36px] sm:h-[40px] flex items-center overflow-hidden pl-3 sm:pl-4 pr-0'
+                className='relative bg-white rounded-full h-[36px] sm:h-[40px] flex items-center overflow-hidden pl-3 sm:pl-4 pr-2'
               >
                 {/* Mirror for width calculation */}
                 <div
@@ -498,7 +605,7 @@ export default function SearchPill({ onMenuClick, onNavigate }: SearchPillProps)
                 </motion.div>
 
                 {/* Keyboard Shortcut Indicator */}
-                <div className='flex items-center justify-center shrink-0 h-[20px] sm:h-[24px] px-1 sm:px-1.5 rounded-md sm:rounded-lg bg-[#F5F5F7] text-[#1B1B1B]/40 text-[8px] sm:text-[10px] font-bold tracking-widest font-mono border border-black/5 ml-[2px] mr-1 sm:mr-1.5'>
+                <div className='flex items-center justify-center shrink-0 h-[20px] sm:h-[24px] px-1 sm:px-1.5 rounded-md sm:rounded-lg bg-[#F5F5F7] text-[#1B1B1B]/40 text-[8px] sm:text-[10px] font-bold tracking-widest font-mono border border-black/5 ml-[2px] mr-0'>
                   ⌘K
                 </div>
               </motion.div>
