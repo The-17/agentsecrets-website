@@ -10,6 +10,7 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
 import { DOCS_SECTIONS } from "@/lib/docs-sections";
+import { Frown, Meh, Smile } from "lucide-react";
 
 function Breadcrumb({ items }: { items: string[] }) {
   return (
@@ -445,14 +446,14 @@ export default function DocsPage() {
       {/* Main Layout Grid */}
       <div className="docs-layout grid grid-cols-1 lg:grid-cols-[280px_1fr] xl:grid-cols-[280px_1fr_260px]" style={{ minHeight: "100vh" }}>
         <div className="hidden lg:block" />
-        <main ref={contentRef} className="docs-content" style={{ padding: "80px 20px 120px", width: "100%", maxWidth: "900px", margin: "0 auto", minHeight: "80vh", display: "flex", flexDirection: "column" }}>
+        <main ref={contentRef} className="docs-content" style={{ padding: "80px 48px 120px 64px", width: "100%", maxWidth: "900px", margin: "0 auto", minHeight: "80vh", display: "flex", flexDirection: "column" }}>
           
           <div key={active} className="docs-section animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ flex: 1 }}>
             <Breadcrumb items={[DOCS_SECTIONS.find(s => s.id === active)?.group || "Docs", activeLabel]} />
             {isLoading && !docsCache[active] ? (
               <div style={{ padding: "40px 0", color: "#999", fontSize: 14 }}>Loading...</div>
             ) : content ? (
-              <MarkdownRenderer content={content} />
+              <MarkdownRenderer content={content} id={active} />
             ) : (
               <div style={{ padding: "40px 0", color: "#666" }}>Section content not found.</div>
             )}
@@ -499,17 +500,13 @@ export default function DocsPage() {
                 
                 <div style={{ display: "flex", gap: 8 }}>
                   <button onClick={() => handleFeedback(active, "sad")} className={`feedback-btn flex items-center justify-center w-10 h-10 rounded-full ${userReaction === "sad" ? "active" : ""}`} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                    <svg width="20" height="8" viewBox="0 0 24 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M2 9C2 9 6 1 12 1C18 1 22 9 22 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                    <Frown size={20} strokeWidth={1.5} />
                   </button>
                   <button onClick={() => handleFeedback(active, "neutral")} className={`feedback-btn flex items-center justify-center w-10 h-10 rounded-full ${userReaction === "neutral" ? "active" : ""}`} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                    <div className="line" style={{ width: 14, height: 2, background: "currentColor", borderRadius: 1 }} />
+                    <Meh size={20} strokeWidth={1.5} />
                   </button>
                   <button onClick={() => handleFeedback(active, "smile")} className={`feedback-btn flex items-center justify-center w-10 h-10 rounded-full ${userReaction === "smile" ? "active" : ""}`} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                    <svg width="20" height="8" viewBox="0 0 24 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M2 1C2 1 6 9 12 9C18 9 22 1 22 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                    <Smile size={20} strokeWidth={1.5} />
                   </button>
                 </div>
               </div>

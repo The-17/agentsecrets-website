@@ -107,13 +107,13 @@ This is a stronger guarantee than a `.env` file, but weaker than the proxy — t
 
 ## Migration checklist
 
-- [ ] Run `agentsecrets init` and create your project
-- [ ] Run `agentsecrets secrets push` to import your `.env`
-- [ ] Run `agentsecrets secrets list` to verify all keys are stored
-- [ ] Run `agentsecrets secrets diff` to verify cloud sync
-- [ ] Add your domains to the allowlist with `agentsecrets workspace allowlist add`
-- [ ] Start the proxy with `agentsecrets proxy start`
-- [ ] Update your code to use the SDK, proxy, or `agentsecrets env`
-- [ ] Test your updated code end-to-end
-- [ ] Delete your `.env` file
-- [ ] Add `.env` and `.env.*` to `.gitignore` if not already there
+[ ] Run `agentsecrets init` and create your project
+[ ] Run `agentsecrets secrets push` to import your `.env`
+[ ] Run `agentsecrets secrets list` to verify all keys are stored
+[ ] Run `agentsecrets secrets diff` to verify cloud sync
+[ ] Add your domains to the allowlist with `agentsecrets workspace allowlist add`
+[ ] Start the proxy with `agentsecrets proxy start`
+[ ] Update your code to use the SDK, proxy, or `agentsecrets env`
+[ ] Test your updated code end-to-end
+[ ] Delete your `.env` file
+[ ] Add `.env` and `.env.*` to `.gitignore` if not already there

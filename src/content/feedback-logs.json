@@ -13,5 +13,15 @@
     "sectionId": "overview",
     "reaction": "smile",
     "timestamp": "2026-05-08T01:30:28.684Z"
+  },
+  {
+    "sectionId": "zero-knowledge-difference",
+    "reaction": "smile",
+    "timestamp": "2026-05-13T22:02:33.622Z"
+  },
+  {
+    "sectionId": "migrate-from-env",
+    "reaction": "sad",
+    "timestamp": "2026-05-13T22:14:22.166Z"
   }
 ]

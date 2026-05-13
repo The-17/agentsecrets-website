@@ -75,7 +75,22 @@ const CopyButton = ({ text }: { text: string }) => {
   );
 };
 
-export default function MarkdownRenderer({ content }: { content: string }) {
+export default function MarkdownRenderer({ content, id: sectionId }: { content: string; id: string }) {
+  const [progress, setProgress] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const saved = localStorage.getItem("agentsecrets_progress");
+    if (saved) {
+      try { setProgress(JSON.parse(saved)); } catch (e) { console.error(e); }
+    }
+  }, []);
+
+  const toggleCheckbox = (cbId: string) => {
+    const newProgress = { ...progress, [cbId]: !progress[cbId] };
+    setProgress(newProgress);
+    localStorage.setItem("agentsecrets_progress", JSON.stringify(newProgress));
+  };
+
   return (
     <div className="markdown-body">
       <style>{`
@@ -84,8 +99,8 @@ export default function MarkdownRenderer({ content }: { content: string }) {
           font-size: 15px;
           line-height: 1.7;
         }
-        .markdown-body h1 { font-size: clamp(32px, 4vw, 42px); font-weight: 600; letter-spacing: -0.04em; margin-bottom: 24px; line-height: 1.1; color: #1B1B1B; }
-        .markdown-body h2 { font-size: 28px; font-weight: 700; margin-bottom: 16px; margin-top: 48px; letter-spacing: -0.03em; color: #1B1B1B; scroll-margin-top: 100px; }
+        .markdown-body h1 { font-size: clamp(32px, 4vw, 42px); font-weight: 600; letter-spacing: -0.04em; margin-bottom: 24px; line-height: 1.25; color: #1B1B1B; }
+        .markdown-body h2 { font-size: 28px; font-weight: 700; margin-bottom: 16px; margin-top: 48px; letter-spacing: -0.03em; color: #1B1B1B; scroll-margin-top: 100px; line-height: 1.3; }
         .markdown-body h3 { font-size: 20px; font-weight: 600; margin-bottom: 12px; margin-top: 32px; color: #1B1B1B; letter-spacing: -0.02em; scroll-margin-top: 100px; }
         .markdown-body p { margin-bottom: 20px; }
         .markdown-body a { color: #007F6A; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
@@ -100,6 +115,43 @@ export default function MarkdownRenderer({ content }: { content: string }) {
         .markdown-body hr { border: none; height: 1px; background: rgba(0,0,0,0.06); margin: 40px 0; }
         .markdown-body .step-heading { display: flex; align-items: center; gap: 12px; scroll-margin-top: 100px; }
         .markdown-body .step-heading .step-number { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.15); font-size: 13px; font-weight: 500; color: #666; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+        .markdown-body .checkbox-row { 
+          display: flex; 
+          align-items: flex-start; 
+          gap: 12px; 
+          margin-bottom: 12px; 
+          cursor: pointer;
+          transition: all 0.2s ease;
+          padding: 8px 12px;
+          margin-left: -12px;
+          border-radius: 8px;
+          border: 1px solid transparent;
+        }
+        .markdown-body .checkbox-row:hover {
+          background: rgba(0,255,135,0.05);
+          border-color: rgba(0,127,106,0.08);
+        }
+        .markdown-body .checkbox-box {
+          width: 18px; 
+          height: 18px; 
+          border-radius: 4px; 
+          border: 1.5px solid rgba(0,0,0,0.15); 
+          display: flex; 
+          align-items: center; 
+          justify-content: center; 
+          flex-shrink: 0; 
+          margin-top: 2px;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .markdown-body .checkbox-row.checked .checkbox-box {
+          background: #007F6A;
+          border-color: #007F6A;
+        }
+        .markdown-body .checkbox-row.checked .checkbox-text {
+          color: #999;
+          text-decoration: line-through;
+          text-decoration-color: rgba(0,0,0,0.2);
+        }
         .mermaid-loading { padding: 40px; background: #111; border-radius: 12px; margin: 24px 0; color: #666; text-align: center; }
         .mermaid-wrap { margin: 32px 0; display: flex; justify-content: center; background: #0A0A0A; padding: 40px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); }
         .code-block-wrapper { position: relative; margin: 24px 0; border-radius: 12px; overflow: hidden; border: 1px solid rgba(0,0,0,0.08); background: #FAFAFA; }
@@ -143,6 +195,66 @@ export default function MarkdownRenderer({ content }: { content: string }) {
               );
             }
             return <h3 id={generatedId} {...props}>{children}</h3>;
+          },
+          p({ children }: any) {
+            const childrenArray = React.Children.toArray(children);
+            const containsCheckbox = childrenArray.some(
+              (child) => typeof child === "string" && /\[[ x]\]/.test(child)
+            );
+
+            if (!containsCheckbox) return <p>{children}</p>;
+
+            const prefix: React.ReactNode[] = [];
+            const items: { content: React.ReactNode[] }[] = [];
+            let currentItem: React.ReactNode[] | null = null;
+
+            childrenArray.forEach((child) => {
+              if (typeof child === "string") {
+                const parts = child.split(/(\[[ x]\])/g);
+                parts.forEach((part) => {
+                  if (part === "[ ]" || part === "[x]") {
+                    currentItem = [];
+                    items.push({ content: currentItem });
+                  } else if (currentItem) {
+                    currentItem.push(part);
+                  } else if (part) {
+                    prefix.push(part);
+                  }
+                });
+              } else {
+                if (currentItem) currentItem.push(child);
+                else prefix.push(child);
+              }
+            });
+
+            return (
+              <div style={{ marginBottom: 20 }}>
+                {prefix.length > 0 && <p style={{ marginBottom: 12 }}>{prefix}</p>}
+                {items.map((item, idx) => {
+                  let contentText = "";
+                  item.content.forEach(c => { if (typeof c === "string") contentText += c; });
+                  if (!contentText.trim() && item.content.length === 0) return null;
+
+                  const cbId = `${sectionId}:${contentText.trim().slice(0, 50).replace(/\s+/g, '-')}`;
+                  const isChecked = progress[cbId] || false;
+
+                  return (
+                    <div 
+                      key={`cb-${idx}`} 
+                      className={`checkbox-row ${isChecked ? 'checked' : ''}`}
+                      onClick={() => toggleCheckbox(cbId)}
+                    >
+                      <div className="checkbox-box">
+                        {isChecked && (
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        )}
+                      </div>
+                      <div className="checkbox-text" style={{ flex: 1 }}>{item.content}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
           },
           table({ children, ...props }: any) {
             return (
