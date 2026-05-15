@@ -439,14 +439,14 @@ export default function DocsPage() {
 
 
       {/* Desktop Sidebar */}
-      <aside className="docs-sidebar hidden lg:block" style={{ position: "fixed", left: 0, width: 280, top: 60, height: "calc(100vh - 60px)", overflowY: "auto", borderRight: "1px solid var(--border)", padding: "32px 24px" }}>
+      <aside className="docs-sidebar hidden lg:block" style={{ position: "fixed", left: 0, width: 300, top: 60, height: "calc(100vh - 60px)", overflowY: "auto", borderRight: "1px solid var(--border)", padding: "32px 32px" }}>
         <SidebarContent active={active} groups={groups} onJump={jump} />
       </aside>
 
       {/* Main Layout Grid */}
-      <div className="docs-layout grid grid-cols-1 lg:grid-cols-[280px_1fr] xl:grid-cols-[280px_1fr_260px]" style={{ minHeight: "100vh" }}>
+      <div className="docs-layout grid grid-cols-1 lg:grid-cols-[300px_1fr] xl:grid-cols-[300px_1fr_320px]" style={{ minHeight: "100vh" }}>
         <div className="hidden lg:block" />
-        <main ref={contentRef} className="docs-content" style={{ padding: "80px 48px 120px 64px", width: "100%", maxWidth: "900px", margin: "0 auto", minHeight: "80vh", display: "flex", flexDirection: "column" }}>
+        <main ref={contentRef} className="docs-content" style={{ padding: "80px 64px 120px 80px", width: "100%", maxWidth: "840px", margin: "0 auto", minHeight: "80vh", display: "flex", flexDirection: "column" }}>
           
           <div key={active} className="docs-section animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ flex: 1 }}>
             <Breadcrumb items={[DOCS_SECTIONS.find(s => s.id === active)?.group || "Docs", activeLabel]} />
@@ -518,7 +518,7 @@ export default function DocsPage() {
         </main>
 
         {/* Right Sidebar (Table of Contents) */}
-        <aside className="hidden xl:block" style={{ position: "sticky", top: 60, height: "calc(100vh - 60px)", padding: "32px 24px", overflowY: "auto" }}>
+        <aside className="hidden xl:block" style={{ position: "sticky", top: 60, height: "calc(100vh - 60px)", padding: "32px 40px", overflowY: "auto" }}>
           {toc.length > 0 && (
             <div>
               <div style={{ fontSize: 13, fontWeight: 400, color: "#999", marginBottom: 16 }}>On this page</div>

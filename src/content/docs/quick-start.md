@@ -2,9 +2,13 @@
 
 Install AgentSecrets, store your first secret, and make your first zero-knowledge API call. The whole setup takes about five minutes.
 
----
+This guide walks you through everything you need to go from a fresh install to your first authenticated API call where the credential value never enters your agent’s context. By the end, you’ll have a project set up, secrets stored, an AI tool connected, and a live audit log entry to confirm it all worked.
+
+
 
 ### 1. Install the CLI
+
+Choose the installation method that fits your environment.
 
 ```bash
 # Homebrew (macOS / Linux) — recommended
@@ -18,71 +22,71 @@ pip install agentsecrets-cli
 
 # Go
 go install github.com/The-17/agentsecrets/cmd/agentsecrets@latest
+```
 
-# Verify
+Verify your installation with:
+
+```bash
 agentsecrets --version
 ```
 
----
-
 ### 2. Initialize
 
-`agentsecrets init` creates your account, generates your encryption keys locally, and sets up your first workspace and project.
+Run `agentsecrets init` to create your account and set up your local environment.
 
 ```bash
 agentsecrets init
 ```
 
-Your encryption keys are generated on your machine and stored in your OS keychain. The server receives your public key only. Everything synced to the cloud is encrypted client-side before upload — the server holds ciphertext and cannot decrypt it.
+The interactive setup will:
+1. Ask whether to create a new account or log in to an existing one
+2. Ask which storage mode to use:
+   - **Keychain (recommended)** — secrets are stored in your OS keychain; no `.env` file is created
+   - **Standard** — secrets are written to a `.env` file (traditional workflow)
+3. Generate a **cryptographic keypair** on your machine. Your private key never leaves your device.
+4. Write `.agent/workflows/agentsecrets.md`, a workflow file that teaches any AI assistant how to use AgentSecrets automatically.
 
-You will be prompted to choose a storage mode:
-
-- **Mode 1: Keychain only** (recommended) — secrets live exclusively in the OS keychain. Nothing is written to disk.
-- **Mode 2: Keychain + .env file** — secrets are also written to `.env.{environment}` files on pull. Use this only if your tools require environment variables at startup and cannot use the proxy.
+To skip the interactive prompts:
+```bash
+agentsecrets init --storage-mode 1   # Keychain mode (recommended)
+agentsecrets init --storage-mode 2   # Standard .env mode
+```
 
 If you are returning to an existing account on a new machine, `agentsecrets init` detects that and walks you through joining your existing workspace.
 
----
+> [TIP]
+> The workflow file at `.agent/workflows/agentsecrets.md` is read automatically by Claude, Cursor, and other AI tools. Do not edit it manually to change environments — use `agentsecrets environment switch` instead.
+
+
 
 ### 3. Create a project
 
-Projects partition your secrets within a workspace. One project per service or codebase is a reasonable starting structure.
+Projects map to your applications. Secrets are partitioned by project, and every secrets operation uses the active project context.
 
 ```bash
-agentsecrets project create my-agent
-agentsecrets project use my-agent
+agentsecrets project create my-app
 ```
 
-The active project is reflected in `agentsecrets status` from this point forward.
+This writes `.agentsecrets/project.json` in the current directory, linking it to the remote project. The file contains no credentials and is safe to commit.
 
----
-
-### 4. Set your active environment
-
-Every project has three environments: `development`, `staging`, and `production`. Development is the default. The active environment determines which secrets the proxy resolves.
+New projects use the `development` environment by default. Switch environments at any time:
 
 ```bash
-# Check the current environment
-agentsecrets status
-
-# Switch when needed
+# Switch to staging environment
 agentsecrets environment switch staging
-agentsecrets environment switch production
-agentsecrets environment switch development
 ```
 
-For most initial setups, development is the right starting point. Configure staging and production secrets later using `agentsecrets environment copy` or `agentsecrets environment merge`.
 
----
-
-### 5. Store your credentials
+### 4. Store your secrets
+Set secrets one at a time or multiple at once. Values are encrypted client-side before leaving your machine, the server only ever stores ciphertext.
 
 ```bash
+# Set a secret
 agentsecrets secrets set STRIPE_KEY=sk_live_...
-agentsecrets secrets set OPENAI_KEY=sk-proj-...
 
-# Verify — key names only, never values
-agentsecrets secrets list
+# Set multiple secrets
+agentsecrets secrets set STRIPE_KEY=sk_live_... OPENAI_KEY=sk-proj-...
+
 ```
 
 The value goes directly to the OS keychain for the active environment. It is never written to disk in plaintext and never sent to the AgentSecrets server in plaintext.
@@ -96,24 +100,62 @@ agentsecrets secrets push
 # You can delete the .env file after this
 ```
 
----
+Confirm what’s stored (key names only, values are never displayed):
+```bash
+agentsecrets secrets list
+```
 
-### 6. Authorize your domains
 
-The proxy is deny-by-default. Every domain your agent calls must be explicitly authorized before any credential will be injected.
+### 5. Authorize your domains
+
+Before making any proxy calls, tell AgentSecrets which API domains your project is allowed to reach. The allowlist is deny-by-default: calls to unauthorized domains are blocked before the secret is even resolved from the keychain.
 
 ```bash
-agentsecrets workspace allowlist add api.stripe.com
-agentsecrets workspace allowlist add api.openai.com
-agentsecrets workspace allowlist add api.github.com
+agentsecrets workspace allowlist add api.stripe.com api.github.com 
 
 # Verify
 agentsecrets workspace allowlist list
 ```
 
+> [WARNING]
+> This step is required. The proxy will return a 403 for any domain not on the allowlist, regardless of whether a matching secret exists. This is intentional — the domain check happens before secret resolution.
+
 Allowlist changes require admin role and password confirmation.
 
----
+
+
+### 6. Connect your AI tools
+Connect AgentSecrets to your AI tool using MCP for Claude Desktop and Cursor, or the HTTP proxy for any other agent or framework.
+
+:::tabs
+
+## MCP (Claude / Cursor / Windsurf)
+```bash
+agentsecrets mcp install
+```
+This auto-configures the MCP server for Claude Desktop and Cursor. Restart your AI tool after running this command. You’ll see two new tools available: `api_call` and `list_secrets`.
+The MCP server communicates over stdio, no network port is opened, and no credential values appear in any config file.
+
+## Env var injection
+Wrap any process and inject secrets from the OS keychain at spawn time. Nothing is written to disk.
+```bash
+agentsecrets env -- node server.js
+agentsecrets env -- python manage.py runserver
+agentsecrets env -- npm run dev
+```
+
+## HTTP proxy (any framework)
+```bash
+agentsecrets proxy start
+```
+Route requests through `http://localhost:8765/proxy` using `X-AS-*` injection headers. This works with LangChain, CrewAI, AutoGen, and any framework that makes HTTP requests.
+```bash
+curl http://localhost:8765/proxy \
+  -H "X-AS-Target-URL: https://api.stripe.com/v1/balance" \
+  -H "X-AS-Inject-Bearer: STRIPE_KEY"
+```
+
+:::
 
 ### 7. Start the proxy
 
@@ -131,7 +173,8 @@ The proxy runs in the background at `localhost:8765`. It resolves credential val
 
 ---
 
-### 8. Make your first call
+### 8. Make your first authenticated call
+Use `agentsecrets call` to make a one-shot authenticated request. Your agent provides the key name; the proxy resolves the value from the keychain and injects it into the outbound request.
 
 ```bash
 agentsecrets call \
@@ -139,7 +182,18 @@ agentsecrets call \
   --bearer STRIPE_KEY
 ```
 
-The proxy resolves `STRIPE_KEY` from the OS keychain, injects it as a bearer token, makes the request, and returns the API response. The value `sk_live_...` never appeared in your terminal, in any variable, or in any log.
+Output:
+```
+HTTP 200
+
+{"object":"balance","available":[{"amount":10000,"currency":"usd",...}]}
+```
+
+What was sent to Stripe: `Authorization: Bearer sk_live_51H...`
+What you (or your agent) saw: the API response only.
+
+> [INFO]
+> The `agentsecrets call` command supports multiple injection styles. See [injection-styles](proxy/injection-styles.md) for the full reference.
 
 ```bash
 # Check what was logged — key names, endpoints, status codes. No value field.
@@ -148,15 +202,25 @@ agentsecrets proxy logs --last 5
 
 ---
 
-### 9. Connect to Claude Desktop (optional)
+### 9. Check the audit log
 
-If you use Claude Desktop or Cursor, one command configures AgentSecrets as an MCP server. No credential values end up in any config file.
+Every call is logged with the key name, endpoint, agent identity, status, and duration. No value field exists in the schema.
 
 ```bash
-agentsecrets mcp install
+agentsecrets proxy logs --last 5
 ```
 
-Restart Claude Desktop after running this. Ask it to check your Stripe balance and it will route the call through AgentSecrets.
+Output:
+```
+TIME      RESULT  METHOD  URL                           KEY         AUTH    STATUS  REASON  DURATION
+14:23:01  * OK    GET     api.stripe.com/v1/balance     STRIPE_KEY  bearer  200     -       245ms
+```
+
+You can also tail the log in real time or filter by agent:
+```bash
+agentsecrets proxy logs --watch
+agentsecrets log list --agent my-billing-agent
+```
 
 ---
 
@@ -179,5 +243,3 @@ Activity:            Last Push: 2 mins ago | Last Pull: Never
 ```
 
 If the proxy is not running, start it with `agentsecrets proxy start`. If you are not logged in, run `agentsecrets init`.
-
----

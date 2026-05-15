@@ -7,6 +7,7 @@ import rehypeRaw from "rehype-raw";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 import mermaid from "mermaid";
+import { AlertTriangle, Lightbulb, Info, AlertOctagon } from "lucide-react";
 
 if (typeof window !== "undefined") {
   mermaid.initialize({
@@ -75,8 +76,80 @@ const CopyButton = ({ text }: { text: string }) => {
   );
 };
 
+const TerminalTabs = ({ tabs }: { tabs: { label: string, content: string }[] }) => {
+  const [activeTab, setActiveTab] = useState(0);
+
+  return (
+    <div className="tabs-container">
+      <div className="tabs-header">
+        {tabs.map((tab, i) => (
+          <button 
+            key={i} 
+            className={`tab-btn ${activeTab === i ? 'active' : ''}`}
+            onClick={() => setActiveTab(i)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      <div className="tab-content">
+        <ReactMarkdown 
+          remarkPlugins={[remarkGfm]} 
+          rehypePlugins={[rehypeRaw]}
+          components={{
+            code({ node, inline, className, children, ...props }: any) {
+              const match = /language-(\w+)/.exec(className || "");
+              const codeString = String(children).replace(/\n$/, "");
+              return (
+                <div className="code-block-wrapper" style={{ margin: 0 }}>
+                  <CopyButton text={codeString} />
+                  <SyntaxHighlighter
+                    style={oneLight}
+                    language={match ? match[1] : "text"}
+                    PreTag="div"
+                    wrapLines={true}
+                    wrapLongLines={true}
+                    customStyle={{ margin: 0, padding: "20px", fontSize: "13px", background: "transparent" }}
+                    {...props}
+                  >
+                    {codeString}
+                  </SyntaxHighlighter>
+                </div>
+              );
+            }
+          }}
+        >
+          {tabs[activeTab].content}
+        </ReactMarkdown>
+      </div>
+    </div>
+  );
+};
+
 export default function MarkdownRenderer({ content, id: sectionId }: { content: string; id: string }) {
   const [progress, setProgress] = useState<Record<string, boolean>>({});
+
+  const processedContent = React.useMemo(() => {
+    // Look for :::tabs blocks
+    return content.replace(/:::tabs\s*([\s\S]*?)\s*:::/g, (_, inner) => {
+      const tabs: { label: string, content: string }[] = [];
+      const parts = inner.split(/^##\s+/m).filter(Boolean);
+      
+      parts.forEach(part => {
+        const lines = part.split('\n');
+        const label = lines[0].trim();
+        const body = lines.slice(1).join('\n').trim();
+        if (label) {
+          tabs.push({ label, content: body });
+        }
+      });
+
+      if (tabs.length === 0) return `:::tabs${inner}:::`;
+      
+      // We'll return a special marker that we'll handle in the components
+      return `\n<div class="terminal-tabs-marker" data-tabs='${JSON.stringify(tabs).replace(/'/g, "&apos;")}'></div>\n`;
+    });
+  }, [content]);
 
   useEffect(() => {
     const saved = localStorage.getItem("agentsecrets_progress");
@@ -109,6 +182,15 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
         .markdown-body li { margin-bottom: 8px; }
         .markdown-body strong { font-weight: 600; color: #1B1B1B; }
         .markdown-body blockquote { border: 1px solid var(--border-em, rgba(0,0,0,0.08)); background: rgba(0,255,135,0.04); border-radius: 12px; margin: 24px 0; padding: 16px 20px; }
+        .markdown-body blockquote.warning { background: rgba(255, 171, 0, 0.05); border-color: rgba(255, 171, 0, 0.2); }
+        .markdown-body blockquote.tip { background: rgba(0, 255, 135, 0.05); border-color: rgba(0, 127, 106, 0.15); }
+        .markdown-body blockquote.info { background: rgba(0, 122, 255, 0.05); border-color: rgba(0, 122, 255, 0.2); }
+        .markdown-body blockquote.caution { background: rgba(255, 59, 48, 0.05); border-color: rgba(255, 59, 48, 0.2); }
+        .callout-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .callout-header.warning { color: #B25E00; }
+        .callout-header.tip { color: #007F6A; }
+        .callout-header.info { color: #0056B3; }
+        .callout-header.caution { color: #B91C1C; }
         .markdown-body table { width: 100%; border-collapse: collapse; margin: 0; }
         .markdown-body th { padding: 14px 20px; font-size: 12px; font-weight: 600; color: #666; text-align: left; border-bottom: 1px solid rgba(0,0,0,0.08); background: #FAFAFA; }
         .markdown-body td { padding: 16px 20px; font-size: 14px; vertical-align: top; border-bottom: 1px solid rgba(0,0,0,0.04); }
@@ -159,6 +241,17 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
         .code-block-wrapper:hover .code-copy-btn { opacity: 1; }
         .code-block-wrapper .code-copy-btn:hover { background: white; color: #1B1B1B; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
         .code-block-wrapper .code-copy-btn:active { transform: scale(0.95); }
+        
+        /* Tabs Styling */
+        .tabs-container { margin: 32px 0; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; overflow: hidden; background: white; }
+        .tabs-header { display: flex; gap: 4px; padding: 8px 8px 0; background: #FAFAFA; border-bottom: 1px solid rgba(0,0,0,0.06); overflow-x: auto; scrollbar-width: none; }
+        .tabs-header::-webkit-scrollbar { display: none; }
+        .tab-btn { padding: 10px 16px; font-size: 13px; font-weight: 500; color: #666; border: none; background: none; cursor: pointer; border-radius: 8px 8px 0 0; transition: all 0.2s ease; position: relative; white-space: nowrap; }
+        .tab-btn:hover { color: #1B1B1B; background: rgba(0,0,0,0.03); }
+        .tab-btn.active { color: #007F6A; background: white; }
+        .tab-btn.active::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background: #007F6A; border-radius: 2px 2px 0 0; }
+        .tab-content { padding: 24px; }
+        .tab-content > .code-block-wrapper { margin: 0; border: none; }
       `}</style>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
@@ -256,12 +349,84 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
               </div>
             );
           },
+          blockquote({ children }: any) {
+            const childrenArray = React.Children.toArray(children);
+            let type: 'warning' | 'tip' | null = null;
+            let finalChildren = children;
+
+            const firstChild = childrenArray[0] as any;
+            if (firstChild && firstChild.props && firstChild.props.children) {
+              const firstChildContent = React.Children.toArray(firstChild.props.children);
+              const text = typeof firstChildContent[0] === 'string' ? firstChildContent[0].toUpperCase() : "";
+              
+              if (text.includes("[WARNING]")) {
+                type = 'warning';
+              } else if (text.includes("[TIP]") || text.includes("[LIGHTBULB]")) {
+                type = 'tip';
+              } else if (text.includes("[INFO]") || text.includes("[NOTE]")) {
+                type = 'info';
+              } else if (text.includes("[CAUTION]") || text.includes("[DANGER]") || text.includes("[STOP]")) {
+                type = 'caution';
+              }
+
+              if (type) {
+                const markerRegex = /\[(WARNING|TIP|LIGHTBULB|INFO|NOTE|CAUTION|DANGER|STOP)\]/i;
+                const newFirstChild = React.cloneElement(firstChild, {
+                  children: firstChildContent.map((c, i) => 
+                    i === 0 && typeof c === "string" ? c.replace(markerRegex, "").trim() : c
+                  ).filter(c => c !== "")
+                });
+                finalChildren = [newFirstChild, ...childrenArray.slice(1)];
+              }
+            }
+
+            if (type) {
+              const icons = {
+                warning: <AlertTriangle size={16} />,
+                tip: <Lightbulb size={16} />,
+                info: <Info size={16} />,
+                caution: <AlertOctagon size={16} />
+              };
+              const labels = {
+                warning: 'Warning',
+                tip: 'Tip',
+                info: 'Note',
+                caution: 'Caution'
+              };
+
+              return (
+                <blockquote className={type}>
+                  <div className={`callout-header ${type}`}>
+                    {icons[type]}
+                    {labels[type]}
+                  </div>
+                  {finalChildren}
+                </blockquote>
+              );
+            }
+
+            return <blockquote>{children}</blockquote>;
+          },
           table({ children, ...props }: any) {
             return (
               <div style={{ margin: "28px 0", borderRadius: 12, overflow: "hidden", border: "1px solid rgba(0,0,0,0.08)", width: "100%", overflowX: "auto" }}>
                 <table {...props}>{children}</table>
               </div>
             );
+          },
+          div({ node, className, children, ...props }: any) {
+            if (className === "terminal-tabs-marker") {
+              const tabsData = props["data-tabs"];
+              if (tabsData) {
+                try {
+                  const tabs = JSON.parse(tabsData.replace(/&apos;/g, "'"));
+                  return <TerminalTabs tabs={tabs} />;
+                } catch (e) {
+                  console.error("Failed to parse tabs data", e);
+                }
+              }
+            }
+            return <div className={className} {...props}>{children}</div>;
           },
           code({ node, inline, className, children, ...props }: any) {
             const match = /language-(\w+)/.exec(className || "");
@@ -293,7 +458,7 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
           }
         }}
       >
-        {content}
+        {processedContent}
       </ReactMarkdown>
     </div>
   );

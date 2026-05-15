@@ -6,15 +6,8 @@ If your current setup relies on `.env` files, this guide walks you through movin
 
 ## Why .env files are risky with AI agents
 
-`.env` files were never designed for a world where an AI agent has filesystem access. The risks are specific:
-
-**Filesystem access**: any coding assistant, file-reading tool, or agent with access to your project directory can read `.env` directly. It is a plaintext file with no access control beyond filesystem permissions.
-
-**Environment variable access**: any process running as the same user can read environment variables. An agent that can execute code or call tools in the same process can access `os.environ`.
-
-**Version control accidents**: `.env` files get committed to repositories. Even with `.gitignore`, merge conflicts, force pushes, and new developer onboarding create repeated opportunities for accidental exposure.
-
-**Log capture**: if a value from `.env` is passed as a function argument or interpolated into a string, it can appear in logs, traces, and error reports.
+> [CAUTION]
+> `.env` files are particularly dangerous when using AI agents. Since agents often have filesystem access, they can inadvertently read or leak your secrets if they are stored in plaintext on disk.
 
 AgentSecrets eliminates all of these vectors by keeping the value out of the filesystem (in keychain-only mode), out of environment variables, and out of any accessible process context.
 
@@ -36,7 +29,10 @@ This reads your `.env` file, encrypts each value locally, uploads the encrypted 
 
 ## Replacing dotenv calls with AgentSecrets
 
-**Python — before:**
+:::tabs
+
+## Python
+**Before:**
 ```python
 from dotenv import load_dotenv
 import os
@@ -50,7 +46,7 @@ response = requests.get(
 )
 ```
 
-**Python — after:**
+**After:**
 ```python
 from agentsecrets import AgentSecrets
 
@@ -61,10 +57,10 @@ response = client.call(
     bearer="STRIPE_KEY"
 )
 ```
-
 The value never enters your Python process. `client.call()` routes the request through the local proxy, which handles resolution and injection.
 
-**Node.js — before:**
+## Node.js
+**Before:**
 ```javascript
 require('dotenv').config();
 const fetch = require('node-fetch');
@@ -74,7 +70,7 @@ const response = await fetch('https://api.stripe.com/v1/balance', {
 });
 ```
 
-**Node.js — after:**
+**After:**
 ```javascript
 const response = await fetch('http://localhost:8765/proxy', {
   headers: {
@@ -83,8 +79,9 @@ const response = await fetch('http://localhost:8765/proxy', {
   }
 });
 ```
-
 The JavaScript SDK is on the roadmap. Until then, route requests through the HTTP proxy using the injection headers shown above.
+
+:::
 
 ---
 
