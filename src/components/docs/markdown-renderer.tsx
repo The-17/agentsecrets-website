@@ -156,8 +156,8 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
 
       if (tabs.length === 0) return `:::tabs${inner}:::`;
       
-      // We'll return a special marker that we'll handle in the components
-      return `\n<div class="terminal-tabs-marker" data-tabs='${JSON.stringify(tabs).replace(/'/g, "&apos;")}'></div>\n`;
+      // Use a custom tag that rehype-raw will pass through
+      return `\n<terminal-tabs data-tabs='${JSON.stringify(tabs).replace(/'/g, "&apos;")}'></terminal-tabs>\n`;
     });
   }, [content]);
 
@@ -361,45 +361,29 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
           },
           blockquote({ children }: any) {
             const childrenArray = React.Children.toArray(children);
-            let type: 'warning' | 'tip' | 'info' | 'caution' | null = null;
-            let finalChildren = children;
+            
+            // 1. Recursive text extraction to find the marker anywhere
+            let allText = "";
+            const walk = (node: any) => {
+              if (typeof node === 'string') allText += node;
+              else if (node?.props?.children) {
+                React.Children.forEach(node.props.children, walk);
+              }
+            };
+            childrenArray.forEach(walk);
 
             const markerRegex = /\[(WARNING|TIP|LIGHTBULB|INFO|NOTE|CAUTION|DANGER|STOP)\]/i;
-
-            const getFirstText = (node: any): string => {
-              if (typeof node === 'string') return node;
-              if (node && node.props && node.props.children) {
-                const first = React.Children.toArray(node.props.children)[0];
-                return typeof first === 'string' ? first : "";
-              }
-              return "";
-            };
-
-            const firstNode = childrenArray[0];
-            const text = getFirstText(firstNode).toUpperCase();
+            const match = allText.match(markerRegex);
             
-            if (text.includes("[WARNING]")) type = 'warning';
-            else if (text.includes("[TIP]") || text.includes("[LIGHTBULB]")) type = 'tip';
-            else if (text.includes("[INFO]") || text.includes("[NOTE]")) type = 'info';
-            else if (text.includes("[CAUTION]") || text.includes("[DANGER]") || text.includes("[STOP]")) type = 'caution';
+            if (match) {
+              const markerText = match[0];
+              const typeStr = match[1].toUpperCase();
+              let type: 'warning' | 'tip' | 'info' | 'caution' = 'info';
+              
+              if (typeStr === 'WARNING') type = 'warning';
+              else if (typeStr === 'TIP' || typeStr === 'LIGHTBULB') type = 'tip';
+              else if (typeStr === 'CAUTION' || typeStr === 'DANGER' || typeStr === 'STOP') type = 'caution';
 
-            if (type) {
-              finalChildren = React.Children.map(children, (child: any, idx) => {
-                if (idx !== 0) return child;
-                if (typeof child === 'string') return child.replace(markerRegex, "").trim();
-                if (child && child.props && child.props.children) {
-                  const innerArray = React.Children.toArray(child.props.children);
-                  return React.cloneElement(child, {
-                    children: innerArray.map((c: any, i) => 
-                      i === 0 && typeof c === "string" ? c.replace(markerRegex, "").trim() : c
-                    ).filter(c => c !== "")
-                  });
-                }
-                return child;
-              });
-            }
-
-            if (type) {
               const icons = {
                 warning: <AlertTriangle size={16} />,
                 tip: <Lightbulb size={16} />,
@@ -413,13 +397,36 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
                 caution: 'Caution'
               };
 
+              // 2. Recursive cleaning to remove the marker text
+              let markerRemoved = false;
+              const clean = (node: any): any => {
+                if (typeof node === 'string') {
+                  if (!markerRemoved && node.toUpperCase().includes(markerText.toUpperCase())) {
+                    markerRemoved = true;
+                    return node.replace(new RegExp(`\\s*\\${markerText}\\s*`, 'i'), "").trim();
+                  }
+                  return node;
+                }
+                if (node && node.props && node.props.children) {
+                  return React.cloneElement(node, {
+                    children: React.Children.map(node.props.children, clean)
+                  });
+                }
+                return node;
+              };
+
+              const cleanedChildren = childrenArray.map(clean).filter(c => {
+                if (typeof c === 'string') return c.trim() !== "";
+                return true;
+              });
+
               return (
                 <blockquote className={type}>
                   <div className={`callout-header ${type}`}>
                     {icons[type]}
                     {labels[type]}
                   </div>
-                  {finalChildren}
+                  {cleanedChildren}
                 </blockquote>
               );
             }
@@ -433,18 +440,20 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
               </div>
             );
           },
-          div({ node, className, children, ...props }: any) {
-            if (className === "terminal-tabs-marker") {
-              const tabsData = props["data-tabs"];
-              if (tabsData) {
-                try {
-                  const tabs = JSON.parse(tabsData.replace(/&apos;/g, "'"));
-                  return <TerminalTabs tabs={tabs} />;
-                } catch (e) {
-                  console.error("Failed to parse tabs data", e);
-                }
+          // Custom handler for our terminal-tabs tag
+          'terminal-tabs': (props: any) => {
+            const tabsData = props["data-tabs"];
+            if (tabsData) {
+              try {
+                const tabs = JSON.parse(tabsData.replace(/&apos;/g, "'"));
+                return <TerminalTabs tabs={tabs} />;
+              } catch (e) {
+                console.error("Failed to parse tabs data", e);
               }
             }
+            return null;
+          },
+          div({ node, className, children, ...props }: any) {
             return <div className={className} {...props}>{children}</div>;
           },
           code({ node, inline, className, children, ...props }: any) {
