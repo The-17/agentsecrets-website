@@ -82,7 +82,7 @@ const TerminalTabs = ({ tabs }: { tabs: { label: string, content: string }[] }) 
   return (
     <div className="tabs-container">
       <div className="tabs-header">
-        {tabs.map((tab, i) => (
+        {tabs.map((tab: any, i: number) => (
           <button 
             key={i} 
             className={`tab-btn ${activeTab === i ? 'active' : ''}`}
@@ -131,11 +131,11 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
 
   const processedContent = React.useMemo(() => {
     // Look for :::tabs blocks
-    return content.replace(/:::tabs\s*([\s\S]*?)\s*:::/g, (_, inner) => {
+    return content.replace(/:::tabs\s*([\s\S]*?)\s*:::/g, (_: string, inner: string) => {
       const tabs: { label: string, content: string }[] = [];
       const parts = inner.split(/^##\s+/m).filter(Boolean);
       
-      parts.forEach(part => {
+      parts.forEach((part: string) => {
         const lines = part.split('\n');
         const label = lines[0].trim();
         const body = lines.slice(1).join('\n').trim();
@@ -259,7 +259,7 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
         components={{
           h2({ children, ...props }: any) {
             let text = "";
-            React.Children.forEach(children, (child) => { if (typeof child === "string") text += child; });
+            React.Children.forEach(children, (child: any) => { if (typeof child === "string") text += child; });
             const stepMatch = text.match(/^(?:(?:Step|Stage)\s+)?(\d+)(?:\s*[—:\-\.]\s+)(.*)$/i);
             const generatedId = text.toLowerCase().replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
             
@@ -275,7 +275,7 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
           },
           h3({ children, ...props }: any) {
             let text = "";
-            React.Children.forEach(children, (child) => { if (typeof child === "string") text += child; });
+            React.Children.forEach(children, (child: any) => { if (typeof child === "string") text += child; });
             const stepMatch = text.match(/^(?:(?:Step|Stage)\s+)?(\d+)(?:\s*[—:\-\.]\s+)(.*)$/i);
             const generatedId = text.toLowerCase().replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
             
@@ -301,10 +301,10 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
             const items: { content: React.ReactNode[] }[] = [];
             let currentItem: React.ReactNode[] | null = null;
 
-            childrenArray.forEach((child) => {
+            childrenArray.forEach((child: any) => {
               if (typeof child === "string") {
                 const parts = child.split(/(\[[ x]\])/g);
-                parts.forEach((part) => {
+                parts.forEach((part: string) => {
                   if (part === "[ ]" || part === "[x]") {
                     currentItem = [];
                     items.push({ content: currentItem });
@@ -323,9 +323,9 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
             return (
               <div style={{ marginBottom: 20 }}>
                 {prefix.length > 0 && <p style={{ marginBottom: 12 }}>{prefix}</p>}
-                {items.map((item, idx) => {
+                {items.map((item: any, idx: number) => {
                   let contentText = "";
-                  item.content.forEach(c => { if (typeof c === "string") contentText += c; });
+                  item.content.forEach((c: any) => { if (typeof c === "string") contentText += c; });
                   if (!contentText.trim() && item.content.length === 0) return null;
 
                   const cbId = `${sectionId}:${contentText.trim().slice(0, 50).replace(/\s+/g, '-')}`;
@@ -372,9 +372,9 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
               if (type) {
                 const markerRegex = /\[(WARNING|TIP|LIGHTBULB|INFO|NOTE|CAUTION|DANGER|STOP)\]/i;
                 const newFirstChild = React.cloneElement(firstChild, {
-                  children: firstChildContent.map((c, i) => 
+                  children: firstChildContent.map((c: any, i: number) => 
                     i === 0 && typeof c === "string" ? c.replace(markerRegex, "").trim() : c
-                  ).filter(c => c !== "")
+                  ).filter((c: any) => c !== "")
                 });
                 finalChildren = [newFirstChild, ...childrenArray.slice(1)];
               }
