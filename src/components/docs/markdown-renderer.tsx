@@ -351,7 +351,7 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
           },
           blockquote({ children }: any) {
             const childrenArray = React.Children.toArray(children);
-            let type: 'warning' | 'tip' | null = null;
+            let type: 'warning' | 'tip' | 'info' | 'caution' | null = null;
             let finalChildren = children;
 
             const firstChild = childrenArray[0] as any;
