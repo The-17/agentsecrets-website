@@ -99,6 +99,16 @@ const TerminalTabs = ({ tabs }: { tabs: { label: string, content: string }[] }) 
           components={{
             code({ node, inline, className, children, ...props }: any) {
               const match = /language-(\w+)/.exec(className || "");
+              const isBlock = !inline && (match || String(children).includes("\n"));
+              
+              if (!isBlock) {
+                return (
+                  <code style={{ background: "rgba(0,127,106,0.08)", padding: "2px 6px", borderRadius: 4, fontSize: 12, color: "#007F6A", fontFamily: "var(--font-mono)", fontWeight: 500 }} {...props}>
+                    {children}
+                  </code>
+                );
+              }
+
               const codeString = String(children).replace(/\n$/, "");
               return (
                 <div className="code-block-wrapper" style={{ margin: 0 }}>
@@ -354,30 +364,39 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
             let type: 'warning' | 'tip' | 'info' | 'caution' | null = null;
             let finalChildren = children;
 
-            const firstChild = childrenArray[0] as any;
-            if (firstChild && firstChild.props && firstChild.props.children) {
-              const firstChildContent = React.Children.toArray(firstChild.props.children);
-              const text = typeof firstChildContent[0] === 'string' ? firstChildContent[0].toUpperCase() : "";
-              
-              if (text.includes("[WARNING]")) {
-                type = 'warning';
-              } else if (text.includes("[TIP]") || text.includes("[LIGHTBULB]")) {
-                type = 'tip';
-              } else if (text.includes("[INFO]") || text.includes("[NOTE]")) {
-                type = 'info';
-              } else if (text.includes("[CAUTION]") || text.includes("[DANGER]") || text.includes("[STOP]")) {
-                type = 'caution';
-              }
+            const markerRegex = /\[(WARNING|TIP|LIGHTBULB|INFO|NOTE|CAUTION|DANGER|STOP)\]/i;
 
-              if (type) {
-                const markerRegex = /\[(WARNING|TIP|LIGHTBULB|INFO|NOTE|CAUTION|DANGER|STOP)\]/i;
-                const newFirstChild = React.cloneElement(firstChild, {
-                  children: firstChildContent.map((c: any, i: number) => 
-                    i === 0 && typeof c === "string" ? c.replace(markerRegex, "").trim() : c
-                  ).filter((c: any) => c !== "")
-                });
-                finalChildren = [newFirstChild, ...childrenArray.slice(1)];
+            const getFirstText = (node: any): string => {
+              if (typeof node === 'string') return node;
+              if (node && node.props && node.props.children) {
+                const first = React.Children.toArray(node.props.children)[0];
+                return typeof first === 'string' ? first : "";
               }
+              return "";
+            };
+
+            const firstNode = childrenArray[0];
+            const text = getFirstText(firstNode).toUpperCase();
+            
+            if (text.includes("[WARNING]")) type = 'warning';
+            else if (text.includes("[TIP]") || text.includes("[LIGHTBULB]")) type = 'tip';
+            else if (text.includes("[INFO]") || text.includes("[NOTE]")) type = 'info';
+            else if (text.includes("[CAUTION]") || text.includes("[DANGER]") || text.includes("[STOP]")) type = 'caution';
+
+            if (type) {
+              finalChildren = React.Children.map(children, (child: any, idx) => {
+                if (idx !== 0) return child;
+                if (typeof child === 'string') return child.replace(markerRegex, "").trim();
+                if (child && child.props && child.props.children) {
+                  const innerArray = React.Children.toArray(child.props.children);
+                  return React.cloneElement(child, {
+                    children: innerArray.map((c: any, i) => 
+                      i === 0 && typeof c === "string" ? c.replace(markerRegex, "").trim() : c
+                    ).filter(c => c !== "")
+                  });
+                }
+                return child;
+              });
             }
 
             if (type) {
@@ -431,7 +450,7 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
           code({ node, inline, className, children, ...props }: any) {
             const match = /language-(\w+)/.exec(className || "");
             if (match && match[1] === "mermaid") return <Mermaid chart={String(children).replace(/\n$/, "")} />;
-            const isBlock = match || String(children).includes("\n");
+            const isBlock = !inline && (match || String(children).includes("\n"));
             if (isBlock) {
               const codeString = String(children).replace(/\n$/, "");
               return (
