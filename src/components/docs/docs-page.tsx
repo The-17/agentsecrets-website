@@ -322,23 +322,28 @@ export default function DocsPage() {
       return;
     }
 
-    // Strip out :::tabs blocks so their titles don't show up in TOC
-    const contentWithoutTabs = content.replace(/:::tabs\s*([\s\S]*?)\s*:::/g, "");
+    const headings: {id: string, title: string, isTab: boolean}[] = [];
+    const lines = content.split('\n');
+    let inTabs = false;
 
-    const headings: {id: string, title: string, level: number}[] = [];
-    const regex = /^(#{2,3})\s+(.*)$/gm;
-    let match;
-    while ((match = regex.exec(contentWithoutTabs)) !== null) {
-      const level = match[1].length;
-      let rawTitle = match[2].trim();
+    lines.forEach(line => {
+      const trimmed = line.trim();
+      if (trimmed.startsWith(':::tabs')) { inTabs = true; return; }
+      if (trimmed === ':::') { inTabs = false; return; }
       
-      const stepMatch = rawTitle.match(/^(?:(?:Step|Stage)\s+)?(\d+)(?:\s*[—:\-\.]\s+)(.*)$/i);
-      const title = stepMatch ? stepMatch[2] : rawTitle;
-      const id = rawTitle.toLowerCase().replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
-      
-      headings.push({ id, title, level });
-    }
-    setToc(headings);
+      const match = trimmed.match(/^(#{2,3})\s+(.*)$/);
+      if (match) {
+        const rawTitle = match[2].trim();
+        const id = rawTitle.toLowerCase().replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
+        const stepMatch = rawTitle.match(/^(?:(?:Step|Stage)\s+)?(\d+)(?:\s*[—:\-\.]\s+)(.*)$/i);
+        const title = stepMatch ? stepMatch[2] : rawTitle;
+        
+        // Tab titles are always ## inside :::tabs
+        headings.push({ id, title, isTab: inTabs && match[1] === '##' });
+      }
+    });
+    
+    setToc(headings as any);
   }, [content]);
 
 
@@ -369,29 +374,29 @@ export default function DocsPage() {
     const mainContainer = contentRef.current;
     if (!mainContainer) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        // Find the topmost intersecting heading
-        const visibleHeadings = entries
-          .filter(e => e.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-
-        if (visibleHeadings.length > 0) {
-          setActiveHeading(visibleHeadings[0].target.id);
+    const handleScroll = () => {
+      const headingElements = mainContainer.querySelectorAll("h2, h3");
+      let currentId = "";
+      
+      headingElements.forEach((el: any) => {
+        const rect = el.getBoundingClientRect();
+        // Adjust threshold based on layout (top nav + padding)
+        if (rect.top <= 220) {
+          currentId = el.id;
         }
-      },
-      {
-        root: mainContainer,
-        rootMargin: "-10% 0px -40% 0px", // Larger trigger zone
-        threshold: 0
+      });
+      
+      if (currentId && currentId !== activeHeading) {
+        setActiveHeading(currentId);
       }
-    );
+    };
 
-    const headings = mainContainer.querySelectorAll("h2, h3");
-    headings.forEach((h) => observer.observe(h));
+    mainContainer.addEventListener("scroll", handleScroll, { passive: true });
+    // Initial check
+    handleScroll();
 
-    return () => observer.disconnect();
-  }, [content, active, isLoading]);
+    return () => mainContainer.removeEventListener("scroll", handleScroll);
+  }, [content, active, isLoading, activeHeading]);
 
   // Sync TOC scroll with active heading
   useEffect(() => {
@@ -508,7 +513,7 @@ export default function DocsPage() {
               {toc.map(item => {
                 const isActive = activeHeading === item.id;
                 return (
-                  <li key={item.id} style={{ paddingLeft: item.level === 3 ? 16 : 0 }}>
+                  <li key={item.id} style={{ paddingLeft: (item as any).isTab ? 16 : 0 }}>
                     <a
                       href={`#${item.id}`}
                       onClick={(e) => {
