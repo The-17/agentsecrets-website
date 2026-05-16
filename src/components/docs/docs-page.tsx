@@ -437,43 +437,6 @@ export default function DocsPage() {
         .text-roll-inner {
           will-change: transform;
         }
-        .step-heading {
-          position: relative;
-          padding-left: 64px;
-          margin-top: 64px !important;
-          margin-bottom: 32px !important;
-          font-weight: 700;
-          letter-spacing: -0.01em;
-        }
-        .step-number {
-          position: absolute;
-          left: 0;
-          top: -4px;
-          width: 36px;
-          height: 36px;
-          background: #1B1B1B;
-          color: #FFFFFF;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 14px;
-          font-weight: 700;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        /* Nested Step Styling */
-        h3.step-heading {
-          padding-left: 56px;
-          margin-top: 40px !important;
-          margin-left: 20px;
-        }
-        h3.step-heading .step-number {
-          width: 28px;
-          height: 28px;
-          font-size: 11px;
-          top: 0px;
-          background: #666; /* Sub-steps use a lighter gray */
-        }
         @media (min-width: 1024px) {
           .docs-layout { 
             display: grid !important;
@@ -483,7 +446,7 @@ export default function DocsPage() {
         @media (min-width: 1280px) {
           .docs-layout { 
             display: grid !important;
-            grid-template-columns: 280px 1fr 280px !important; 
+            grid-template-columns: 280px 1fr 320px !important; 
           }
         }
       `}} />
@@ -580,7 +543,7 @@ export default function DocsPage() {
           </div>
 
           {/* Right Sidebar (Table of Contents) - Sticky inside content area */}
-          <aside className="hidden xl:block" style={{ width: 240, position: "sticky", top: 120, height: "fit-content", padding: "0 0 40px 0" }}>
+          <aside className="hidden xl:block" style={{ width: 320, position: "sticky", top: 120, height: "fit-content", padding: "0 0 40px 0" }}>
             {toc.length > 0 && (
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: "#1B1B1B", marginBottom: 20, display: "flex", alignItems: "center", gap: 8 }}>

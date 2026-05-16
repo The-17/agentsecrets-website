@@ -140,8 +140,15 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
   const [progress, setProgress] = useState<Record<string, boolean>>({});
 
   const processedContent = React.useMemo(() => {
-    // Look for :::tabs blocks
-    return content.replace(/:::tabs\s*([\s\S]*?)\s*:::/g, (_: string, inner: string) => {
+    let processed = content;
+    
+    // Process :::step blocks
+    processed = processed.replace(/:::step\s*([\s\S]*?)\s*:::/g, (_: string, inner: string) => {
+      return `\n<div class="step-content-wrapper">\n${inner}\n</div>\n`;
+    });
+
+    // Process :::tabs blocks
+    return processed.replace(/:::tabs\s*([\s\S]*?)\s*:::/g, (_: string, inner: string) => {
       const tabs: { label: string, content: string }[] = [];
       const parts = inner.split(/^##\s+/m).filter(Boolean);
       
@@ -205,8 +212,18 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
         .markdown-body th { padding: 14px 20px; font-size: 12px; font-weight: 600; color: #666; text-align: left; border-bottom: 1px solid rgba(0,0,0,0.08); background: #FAFAFA; }
         .markdown-body td { padding: 16px 20px; font-size: 14px; vertical-align: top; border-bottom: 1px solid rgba(0,0,0,0.04); }
         .markdown-body hr { border: none; height: 1px; background: rgba(0,0,0,0.06); margin: 40px 0; }
-        .markdown-body .step-heading { display: flex; align-items: center; gap: 12px; scroll-margin-top: 100px; }
+        .markdown-body .step-heading { display: flex; align-items: center; gap: 12px; scroll-margin-top: 100px; margin-bottom: 8px !important; }
         .markdown-body .step-heading .step-number { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.15); font-size: 13px; font-weight: 500; color: #666; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+        .markdown-body .step-content-wrapper {
+          padding-left: 38px;
+          margin-left: 13px;
+          border-left: 1px solid rgba(0,0,0,0.06);
+          margin-bottom: 40px;
+          padding-bottom: 8px;
+        }
+        .markdown-body .step-content-wrapper > *:last-child {
+          margin-bottom: 0;
+        }
         .markdown-body .checkbox-row { 
           display: flex; 
           align-items: flex-start; 

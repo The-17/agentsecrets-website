@@ -7,6 +7,7 @@ This guide walks you through everything you need to go from a fresh install to y
 
 
 ### 1. Install the CLI
+:::step
 
 Choose the installation method that fits your environment.
 
@@ -29,8 +30,10 @@ Verify your installation with:
 ```bash
 agentsecrets --version
 ```
+:::
 
 ### 2. Initialize
+:::step
 
 Run `agentsecrets init` to create your account and set up your local environment.
 
@@ -56,10 +59,12 @@ If you are returning to an existing account on a new machine, `agentsecrets init
 
 > [TIP]
 > The workflow file at `.agent/workflows/agentsecrets.md` is read automatically by Claude, Cursor, and other AI tools. Do not edit it manually to change environments — use `agentsecrets environment switch` instead.
+:::
 
 
 
 ### 3. Create a project
+:::step
 
 Projects map to your applications. Secrets are partitioned by project, and every secrets operation uses the active project context.
 
@@ -75,9 +80,11 @@ New projects use the `development` environment by default. Switch environments a
 # Switch to staging environment
 agentsecrets environment switch staging
 ```
+:::
 
 
 ### 4. Store your secrets
+:::step
 Set secrets one at a time or multiple at once. Values are encrypted client-side before leaving your machine, the server only ever stores ciphertext.
 
 ```bash
@@ -99,6 +106,7 @@ agentsecrets secrets push
 # Encrypts locally, uploads ciphertext
 # You can delete the .env file after this
 ```
+:::
 
 Confirm what’s stored (key names only, values are never displayed):
 ```bash
@@ -107,6 +115,7 @@ agentsecrets secrets list
 
 
 ### 5. Authorize your domains
+:::step
 
 Before making any proxy calls, tell AgentSecrets which API domains your project is allowed to reach. The allowlist is deny-by-default: calls to unauthorized domains are blocked before the secret is even resolved from the keychain.
 
@@ -121,10 +130,12 @@ agentsecrets workspace allowlist list
 > This step is required. The proxy will return a 403 for any domain not on the allowlist, regardless of whether a matching secret exists. This is intentional — the domain check happens before secret resolution.
 
 Allowlist changes require admin role and password confirmation.
+:::
 
 
 
 ### 6. Connect your AI tools
+:::step
 Connect AgentSecrets to your AI tool using MCP for Claude Desktop and Cursor, or the HTTP proxy for any other agent or framework.
 
 :::tabs
@@ -156,8 +167,10 @@ curl http://localhost:8765/proxy \
 ```
 
 :::
+:::
 
 ### 7. Start the proxy
+:::step
 
 ```bash
 agentsecrets proxy start
@@ -170,10 +183,12 @@ agentsecrets proxy stop
 ```
 
 The proxy runs in the background at `localhost:8765`. It resolves credential values from the OS keychain and injects them at the transport layer. Your code sends key names. Values never cross into your process.
+:::
 
 ---
 
 ### 8. Make your first authenticated call
+:::step
 Use `agentsecrets call` to make a one-shot authenticated request. Your agent provides the key name; the proxy resolves the value from the keychain and injects it into the outbound request.
 
 ```bash
@@ -199,27 +214,30 @@ What you (or your agent) saw: the API response only.
 # Check what was logged — key names, endpoints, status codes. No value field.
 agentsecrets proxy logs --last 5
 ```
+:::
 
 ---
 
 ### 9. Check the audit log
-  Every call is logged with the key name, endpoint, agent identity, status, and duration. No value field exists in the schema.
+:::step
+Every call is logged with the key name, endpoint, agent identity, status, and duration. No value field exists in the schema.
 
-  ```bash
-  agentsecrets proxy logs --last 5
-  ```
+```bash
+agentsecrets proxy logs --last 5
+```
 
-  Output:
-  ```
-  TIME      RESULT  METHOD  URL                           KEY         AUTH    STATUS  REASON  DURATION
-  14:23:01  * OK    GET     api.stripe.com/v1/balance     STRIPE_KEY  bearer  200     -       245ms
-  ```
+Output:
+```
+TIME      RESULT  METHOD  URL                           KEY         AUTH    STATUS  REASON  DURATION
+14:23:01  * OK    GET     api.stripe.com/v1/balance     STRIPE_KEY  bearer  200     -       245ms
+```
 
-  You can also tail the log in real time or filter by agent:
-  ```bash
-  agentsecrets proxy logs --watch
-  agentsecrets log list --agent my-billing-agent
-  ```
+You can also tail the log in real time or filter by agent:
+```bash
+agentsecrets proxy logs --watch
+agentsecrets log list --agent my-billing-agent
+```
+:::
 
 
 ## Verify everything is working
