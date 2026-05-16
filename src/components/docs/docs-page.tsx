@@ -357,6 +357,7 @@ export default function DocsPage() {
     const headings: {id: string, title: string, isTab: boolean}[] = [];
     const lines = content.split('\n');
     let inTabs = false;
+    const idCounts: Record<string, number> = {};
 
     lines.forEach(line => {
       const trimmed = line.trim();
@@ -370,7 +371,15 @@ export default function DocsPage() {
       const match = trimmed.match(/^(#{2,3})\s+(.*)$/);
       if (match) {
         const rawTitle = match[2].trim();
-        const id = rawTitle.toLowerCase().replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
+        let id = rawTitle.toLowerCase().replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
+        
+        if (idCounts[id] !== undefined) {
+          idCounts[id]++;
+          id = `${id}-${idCounts[id]}`;
+        } else {
+          idCounts[id] = 0;
+        }
+
         const stepMatch = rawTitle.match(/^(?:(?:Step|Stage)\s+)?(\d+)(?:\s*[—:\-\.]\s+)(.*)$/i);
         const title = stepMatch ? stepMatch[2] : rawTitle;
         

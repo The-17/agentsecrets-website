@@ -184,6 +184,8 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
     localStorage.setItem("agentsecrets_progress", JSON.stringify(newProgress));
   };
 
+  const idCounts: Record<string, number> = {};
+
   return (
     <div className="markdown-body">
       <style>{`
@@ -213,7 +215,8 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
         .callout-header.caution { color: #B91C1C; }
         .markdown-body table { width: 100%; border-collapse: collapse; margin: 0; }
         .markdown-body th { padding: 14px 20px; font-size: 12px; font-weight: 600; color: #666; text-align: left; border-bottom: 1px solid rgba(0,0,0,0.08); background: #FAFAFA; }
-        .markdown-body td { padding: 16px 20px; font-size: 14px; vertical-align: top; border-bottom: 1px solid rgba(0,0,0,0.04); }
+        .markdown-body td { padding: 16px 20px; font-size: 14px; vertical-align: top; border-bottom: 1px solid rgba(0,0,0,0.04); color: #444; }
+        .markdown-body th:first-child, .markdown-body td:first-child { min-width: 160px; white-space: nowrap; font-family: var(--font-mono); font-weight: 500; color: #1B1B1B; }
         .markdown-body hr { border: none; height: 1px; background: rgba(0,0,0,0.06); margin: 40px 0; }
         .markdown-body .step-heading { display: flex; align-items: center; gap: 12px; scroll-margin-top: 100px; margin-bottom: 8px !important; }
         .markdown-body .step-heading .step-number { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.15); font-size: 13px; font-weight: 500; color: #666; flex-shrink: 0; font-variant-numeric: tabular-nums; }
@@ -291,33 +294,47 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
             let text = "";
             React.Children.forEach(children, (child: any) => { if (typeof child === "string") text += child; });
             const stepMatch = text.match(/^(?:(?:Step|Stage)\s+)?(\d+)(?:\s*[—:\-\.]\s+)(.*)$/i);
-            const generatedId = text.toLowerCase().replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
+            let generatedId = text.toLowerCase().replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
             
+            if (idCounts[generatedId] !== undefined) {
+              idCounts[generatedId]++;
+              generatedId = `${generatedId}-${idCounts[generatedId]}`;
+            } else {
+              idCounts[generatedId] = 0;
+            }
+
             if (stepMatch) {
               return (
-                <h2 id={generatedId} className="step-heading" {...props}>
+                <h2 id={generatedId} className="step-heading" style={{ scrollMarginTop: "100px" }} {...props}>
                   <span className="step-number">{stepMatch[1]}</span>
                   {stepMatch[2]}
                 </h2>
               );
             }
-            return <h2 id={generatedId} {...props}>{children}</h2>;
+            return <h2 id={generatedId} style={{ scrollMarginTop: "100px" }} {...props}>{children}</h2>;
           },
           h3({ children, ...props }: any) {
             let text = "";
             React.Children.forEach(children, (child: any) => { if (typeof child === "string") text += child; });
             const stepMatch = text.match(/^(?:(?:Step|Stage)\s+)?(\d+)(?:\s*[—:\-\.]\s+)(.*)$/i);
-            const generatedId = text.toLowerCase().replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
+            let generatedId = text.toLowerCase().replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
             
+            if (idCounts[generatedId] !== undefined) {
+              idCounts[generatedId]++;
+              generatedId = `${generatedId}-${idCounts[generatedId]}`;
+            } else {
+              idCounts[generatedId] = 0;
+            }
+
             if (stepMatch) {
               return (
-                <h3 id={generatedId} className="step-heading" {...props}>
+                <h3 id={generatedId} className="step-heading" style={{ scrollMarginTop: "100px" }} {...props}>
                   <span className="step-number">{stepMatch[1]}</span>
                   {stepMatch[2]}
                 </h3>
               );
             }
-            return <h3 id={generatedId} {...props}>{children}</h3>;
+            return <h3 id={generatedId} style={{ scrollMarginTop: "100px" }} {...props}>{children}</h3>;
           },
           p({ children }: any) {
             const childrenArray = React.Children.toArray(children);

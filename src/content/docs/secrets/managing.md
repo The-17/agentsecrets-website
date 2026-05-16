@@ -94,16 +94,9 @@ The CLI deletes the key from the remote API, your OS keychain (Keychain mode), a
 > ```bash
 > agentsecrets environment switch development
 > agentsecrets secrets delete OLD_KEY
-> 
-> agentsecrets environment switch staging
-> agentsecrets secrets delete OLD_KEY
-> 
-> agentsecrets environment switch production
-> agentsecrets secrets delete OLD_KEY
 > ```
 >
 > Or use `agentsecrets environment clean` to remove all secrets in the current environment at once.
->
 
 ---
 
