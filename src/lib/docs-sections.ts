@@ -24,74 +24,77 @@ export const DOCS_SECTIONS = [
   { id: "concepts/storage-modes", group: "Fundamental Concepts", label: "Storage Modes" },
   { id: "concepts/no-get-method", group: "Fundamental Concepts", label: "The No get() Principle" },
 
-  // Secrets
-  { id: "secrets/managing", group: "Secrets", label: "Managing Secrets" },
-  { id: "secrets/push", group: "Secrets", label: "Pushing to Cloud Sync" },
-  { id: "secrets/pull", group: "Secrets", label: "Pulling from Cloud Sync" },
-  { id: "secrets/diff", group: "Secrets", label: "Diffing Secrets" },
-  { id: "secrets/import-env", group: "Secrets", label: "Importing from .env" },
-  { id: "secrets/rotation", group: "Secrets", label: "Secret Rotation (Soon)" },
+  // CLI Reference
+  { id: "cli/account", group: "CLI Reference", label: "init / login / logout" },
+  
+  // CLI: Secrets
+  { id: "secrets/managing", group: "CLI Reference", label: "Managing Secrets" },
+  { id: "secrets/push", group: "CLI Reference", label: "Pushing to Cloud Sync" },
+  { id: "secrets/pull", group: "CLI Reference", label: "Pulling from Cloud Sync" },
+  { id: "secrets/diff", group: "CLI Reference", label: "Diffing Secrets" },
+  { id: "secrets/import-env", group: "CLI Reference", label: "Importing from .env" },
+  { id: "secrets/rotation", group: "CLI Reference", label: "Secret Rotation (Soon)" },
+  
+  // CLI: Environments
+  { id: "environments/overview", group: "CLI Reference", label: "Environments Overview" },
+  { id: "environments/switch", group: "CLI Reference", label: "Switching Environments" },
+  { id: "environments/list", group: "CLI Reference", label: "Listing & Coverage" },
+  { id: "environments/copy", group: "CLI Reference", label: "Copying an Environment" },
+  { id: "environments/merge", group: "CLI Reference", label: "Merging Environments" },
+  { id: "environments/clean", group: "CLI Reference", label: "Cleaning an Environment" },
 
-  // Environments
-  { id: "environments/overview", group: "Environments", label: "Environments Overview" },
-  { id: "environments/switch", group: "Environments", label: "Switching Environments" },
-  { id: "environments/list", group: "Environments", label: "Listing & Coverage" },
-  { id: "environments/copy", group: "Environments", label: "Copying an Environment" },
-  { id: "environments/merge", group: "Environments", label: "Merging Environments" },
-  { id: "environments/clean", group: "Environments", label: "Cleaning an Environment" },
+  // CLI: The Credential Proxy
+  { id: "proxy/overview", group: "CLI Reference", label: "Proxy Overview" },
+  { id: "proxy/start-stop", group: "CLI Reference", label: "Starting and Stopping" },
+  { id: "proxy/injection", group: "CLI Reference", label: "How Injection Works" },
+  { id: "proxy/injection-styles", group: "CLI Reference", label: "Auth Injection Styles" },
+  { id: "proxy/domain-allowlist", group: "CLI Reference", label: "Domain Allowlist" },
+  { id: "proxy/response-redaction", group: "CLI Reference", label: "Response Body Redaction" },
+  { id: "proxy/ssrf-protection", group: "CLI Reference", label: "SSRF Protection" },
+  { id: "proxy/session-token", group: "CLI Reference", label: "Session Token Auth" },
+  { id: "proxy/logs", group: "CLI Reference", label: "Proxy Logs" },
+  { id: "proxy/http-clients", group: "CLI Reference", label: "Using with HTTP Clients" },
+  { id: "proxy/performance", group: "CLI Reference", label: "Performance & Latency" },
 
-  // The Credential Proxy
-  { id: "proxy/overview", group: "The Credential Proxy", label: "Proxy Overview" },
-  { id: "proxy/start-stop", group: "The Credential Proxy", label: "Starting and Stopping" },
-  { id: "proxy/injection", group: "The Credential Proxy", label: "How Injection Works" },
-  { id: "proxy/injection-styles", group: "The Credential Proxy", label: "Auth Injection Styles" },
-  { id: "proxy/domain-allowlist", group: "The Credential Proxy", label: "Domain Allowlist" },
-  { id: "proxy/response-redaction", group: "The Credential Proxy", label: "Response Body Redaction" },
-  { id: "proxy/ssrf-protection", group: "The Credential Proxy", label: "SSRF Protection" },
-  { id: "proxy/session-token", group: "The Credential Proxy", label: "Session Token Auth" },
-  { id: "proxy/logs", group: "The Credential Proxy", label: "Proxy Logs" },
-  { id: "proxy/http-clients", group: "The Credential Proxy", label: "Using with HTTP Clients" },
-  { id: "proxy/performance", group: "The Credential Proxy", label: "Performance & Latency" },
+  // CLI: Env Injection
+  { id: "env-injection/overview", group: "CLI Reference", label: "env Injection Overview" },
+  { id: "env-injection/any-process", group: "CLI Reference", label: "Injecting into Any Process" },
+  { id: "env-injection/proxy-vs-env", group: "CLI Reference", label: "Proxy vs env Injection" },
 
-  // Environment Variable Injection
-  { id: "env-injection/overview", group: "Env Injection", label: "How it Works" },
-  { id: "env-injection/any-process", group: "Env Injection", label: "Injecting into Any Process" },
-  { id: "env-injection/proxy-vs-env", group: "Env Injection", label: "Proxy vs env Injection" },
+  // CLI: Workspaces & Teams
+  { id: "workspaces/overview", group: "CLI Reference", label: "Workspaces Overview" },
+  { id: "workspaces/create", group: "CLI Reference", label: "Creating a Workspace" },
+  { id: "workspaces/invite", group: "CLI Reference", label: "Inviting Team Members" },
+  { id: "workspaces/roles", group: "CLI Reference", label: "Roles and Permissions" },
+  { id: "workspaces/onboarding", group: "CLI Reference", label: "Onboarding a Developer" },
+  { id: "workspaces/revoke", group: "CLI Reference", label: "Revoking Access" },
+  { id: "workspaces/multiple", group: "CLI Reference", label: "Multiple Workspaces" },
 
-  // Workspaces & Teams
-  { id: "workspaces/overview", group: "Workspaces & Teams", label: "Workspaces Overview" },
-  { id: "workspaces/create", group: "Workspaces & Teams", label: "Creating a Workspace" },
-  { id: "workspaces/invite", group: "Workspaces & Teams", label: "Inviting Team Members" },
-  { id: "workspaces/roles", group: "Workspaces & Teams", label: "Roles and Permissions" },
-  { id: "workspaces/onboarding", group: "Workspaces & Teams", label: "Onboarding a Developer" },
-  { id: "workspaces/revoke", group: "Workspaces & Teams", label: "Revoking Access" },
-  { id: "workspaces/multiple", group: "Workspaces & Teams", label: "Multiple Workspaces" },
+  // CLI: Projects
+  { id: "projects/overview", group: "CLI Reference", label: "Projects Overview" },
+  { id: "projects/create", group: "CLI Reference", label: "Creating a Project" },
+  { id: "projects/switch", group: "CLI Reference", label: "Switching Between Projects" },
+  { id: "projects/update-delete", group: "CLI Reference", label: "Updating and Deleting" },
+  { id: "projects/invites", group: "CLI Reference", label: "Project Invites" },
+  { id: "projects/organizing", group: "CLI Reference", label: "Organizing Projects" },
 
-  // Projects
-  { id: "projects/overview", group: "Projects", label: "Projects Overview" },
-  { id: "projects/create", group: "Projects", label: "Creating a Project" },
-  { id: "projects/switch", group: "Projects", label: "Switching Between Projects" },
-  { id: "projects/update-delete", group: "Projects", label: "Updating and Deleting" },
-  { id: "projects/invites", group: "Projects", label: "Project Invites" },
-  { id: "projects/organizing", group: "Projects", label: "Organizing Projects" },
+  // CLI: Agent Identity
+  { id: "agent-identity/overview", group: "CLI Reference", label: "Identity Overview" },
+  { id: "agent-identity/anonymous", group: "CLI Reference", label: "Anonymous Agents" },
+  { id: "agent-identity/declared", group: "CLI Reference", label: "Declared Identity" },
+  { id: "agent-identity/tokens-issue", group: "CLI Reference", label: "Cryptographic Tokens" },
+  { id: "agent-identity/token-lifecycle", group: "CLI Reference", label: "Token Lifecycle" },
+  { id: "agent-identity/multi-agent", group: "CLI Reference", label: "Multi-Agent Systems" },
+  { id: "agent-identity/auditing", group: "CLI Reference", label: "Auditing by Identity" },
+  { id: "agent-identity/anonymous-gaps", group: "CLI Reference", label: "Finding Coverage Gaps" },
 
-  // Agent Identity
-  { id: "agent-identity/overview", group: "Agent Identity", label: "Identity Overview" },
-  { id: "agent-identity/anonymous", group: "Agent Identity", label: "Anonymous Agents" },
-  { id: "agent-identity/declared", group: "Agent Identity", label: "Declared Identity" },
-  { id: "agent-identity/tokens-issue", group: "Agent Identity", label: "Cryptographic Tokens" },
-  { id: "agent-identity/token-lifecycle", group: "Agent Identity", label: "Token Lifecycle" },
-  { id: "agent-identity/multi-agent", group: "Agent Identity", label: "Multi-Agent Systems" },
-  { id: "agent-identity/auditing", group: "Agent Identity", label: "Auditing by Identity" },
-  { id: "agent-identity/anonymous-gaps", group: "Agent Identity", label: "Finding Coverage Gaps" },
-
-  // Audit & Governance
-  { id: "audit/overview", group: "Audit & Governance", label: "Audit Log Overview" },
-  { id: "audit/reading", group: "Audit & Governance", label: "Reading and Filtering" },
-  { id: "audit/summary", group: "Audit & Governance", label: "Log Summary" },
-  { id: "audit/export", group: "Audit & Governance", label: "Exporting Logs (CSV)" },
-  { id: "audit/detail", group: "Audit & Governance", label: "Log Detail" },
-  { id: "audit/compliance", group: "Audit & Governance", label: "Using for Compliance" },
+  // CLI: Audit & Governance
+  { id: "audit/overview", group: "CLI Reference", label: "Audit Log Overview" },
+  { id: "audit/reading", group: "CLI Reference", label: "Reading and Filtering" },
+  { id: "audit/summary", group: "CLI Reference", label: "Log Summary" },
+  { id: "audit/export", group: "CLI Reference", label: "Exporting Logs (CSV)" },
+  { id: "audit/detail", group: "CLI Reference", label: "Log Detail" },
+  { id: "audit/compliance", group: "CLI Reference", label: "Using for Compliance" },
 
   // Integrations
   { id: "integrations/overview", group: "Integrations", label: "Integrations Overview" },
@@ -110,17 +113,15 @@ export const DOCS_SECTIONS = [
   { id: "sdk/javascript", group: "SDK", label: "JavaScript SDK (Soon)" },
   { id: "sdk/zero-knowledge-mcp", group: "SDK", label: "ZK MCP Server" },
 
-  // API & Backend
-  { id: "api/overview", group: "API & Backend", label: "Backend Overview" },
-  { id: "api/architecture", group: "API & Backend", label: "API Architecture" },
-  { id: "api/authentication", group: "API & Backend", label: "Authentication" },
-  { id: "api/workspaces", group: "API & Backend", label: "Workspaces API" },
-  { id: "api/projects", group: "API & Backend", label: "Projects API" },
-  { id: "api/secrets", group: "API & Backend", label: "Secrets API" },
-  { id: "api/environments", group: "API & Backend", label: "Environments API" },
-  { id: "api/agent-identity", group: "API & Backend", label: "Agent Identity API" },
-  { id: "api/audit", group: "API & Backend", label: "Audit Log API" },
-  { id: "api/reference", group: "API & Backend", label: "API Reference (Swagger)" },
+  // Security
+  { id: "security/overview", group: "Security", label: "Security Overview" },
+  { id: "security/encryption", group: "Security", label: "Encryption Model" },
+  { id: "security/cloud-sync", group: "Security", label: "Zero-Knowledge Sync" },
+  { id: "security/proxy-layers", group: "Security", label: "Proxy Security Layers" },
+  { id: "security/threat-model", group: "Security", label: "Threat Model" },
+  { id: "security/faq", group: "Security", label: "Security FAQ" },
+  { id: "security/audit-status", group: "Security", label: "Third-Party Audit" },
+  { id: "security/reporting", group: "Security", label: "Reporting Vulnerabilities" },
 
   // Guides
   { id: "guides/guide", group: "Guides", label: "Guides Overview" },
@@ -134,16 +135,6 @@ export const DOCS_SECTIONS = [
   { id: "guides/audit-team", group: "Guides", label: "Auditing Team Activity" },
   { id: "guides/dev-to-production", group: "Guides", label: "Dev to Production" },
   { id: "guides/monorepo", group: "Guides", label: "Monorepo Setup" },
-
-  // Security
-  { id: "security/overview", group: "Security", label: "Security Overview" },
-  { id: "security/encryption", group: "Security", label: "Encryption Model" },
-  { id: "security/cloud-sync", group: "Security", label: "Zero-Knowledge Sync" },
-  { id: "security/proxy-layers", group: "Security", label: "Proxy Security Layers" },
-  { id: "security/threat-model", group: "Security", label: "Threat Model" },
-  { id: "security/faq", group: "Security", label: "Security FAQ" },
-  { id: "security/audit-status", group: "Security", label: "Third-Party Audit" },
-  { id: "security/reporting", group: "Security", label: "Reporting Vulnerabilities" },
 
   // Comparisons
   { id: "comparisons/vs-env-files", group: "Comparisons", label: "vs .env Files" },
@@ -169,19 +160,6 @@ export const DOCS_SECTIONS = [
   { id: "changelog/v1-2-0", group: "Changelog", label: "v1.2.0" },
   { id: "changelog/v1-1-x", group: "Changelog", label: "v1.1.x" },
   { id: "changelog/v1-0-x", group: "Changelog", label: "v1.0.x" },
-
-  // CLI Reference
-  { id: "cli/account", group: "CLI Reference", label: "init / login / logout" },
-  { id: "cli/secrets", group: "CLI Reference", label: "secrets" },
-  { id: "cli/environment", group: "CLI Reference", label: "environment" },
-  { id: "cli/workspace", group: "CLI Reference", label: "workspace" },
-  { id: "cli/project", group: "CLI Reference", label: "project" },
-  { id: "cli/proxy", group: "CLI Reference", label: "proxy" },
-  { id: "cli/call", group: "CLI Reference", label: "call" },
-  { id: "cli/mcp", group: "CLI Reference", label: "mcp" },
-  { id: "cli/env", group: "CLI Reference", label: "env" },
-  { id: "cli/log", group: "CLI Reference", label: "log" },
-  { id: "cli/agent", group: "CLI Reference", label: "agent" },
 ] as const;
 
 export type DocSection = (typeof DOCS_SECTIONS)[number];

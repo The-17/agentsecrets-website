@@ -34,7 +34,7 @@ This prompts for confirmation before writing to all three environments.
 agentsecrets secrets list
 ```
 
-Lists key names only — never values. The output shows cross-environment coverage so you can see which keys are missing in which environments without switching context:
+Lists key names only, never values. The output shows cross-environment coverage so you can see which keys are missing in which environments without switching context:
 
 ```
 Environment: development
