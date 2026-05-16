@@ -127,7 +127,7 @@ const TerminalTabs = ({ tabs }: { tabs: { label: string, content: string }[] }) 
                 </div>
               );
             }
-          }} as any}
+          } as any}
         >
           {tabs[activeTab].content}
         </ReactMarkdown>
@@ -484,7 +484,7 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
               <code style={{ background: "rgba(0,127,106,0.08)", padding: "2px 6px", borderRadius: 4, fontSize: 13, color: "#007F6A", fontFamily: "var(--font-mono)", fontWeight: 500 }} {...props}>{children}</code>
             );
           }
-        }} as any}
+        } as any}
       >
         {processedContent}
       </ReactMarkdown>
