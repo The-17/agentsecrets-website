@@ -64,7 +64,7 @@ function SidebarContent({ active, groups, onJump }: { active: string; groups: st
                 width: "100%", 
                 background: "none", 
                 border: "none", 
-                padding: "4px 12px", 
+                padding: "4px 4px", 
                 marginBottom: 8,
                 cursor: "pointer",
                 textAlign: "left"
@@ -100,7 +100,7 @@ function SidebarContent({ active, groups, onJump }: { active: string; groups: st
                           alignItems: "center",
                           gap: 8,
                           width: "100%",
-                          padding: "8px 12px",
+                          padding: "8px 4px",
                           borderRadius: 8,
                           fontSize: 13,
                           color: isActive ? "#1B1B1B" : "#666666",
@@ -122,7 +122,13 @@ function SidebarContent({ active, groups, onJump }: { active: string; groups: st
                           transition: "opacity 0.2s",
                           flexShrink: 0,
                         }} />
-                        {s.label}
+                        <span style={{ flex: 1 }}>{s.label}</span>
+                        <svg 
+                          width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                          style={{ opacity: isActive ? 0.8 : 0, transition: "opacity 0.2s", color: "#007F6A" }}
+                        >
+                          <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
                       </button>
 
                       {children.length > 0 && isParentOrChildActive && (
@@ -138,7 +144,7 @@ function SidebarContent({ active, groups, onJump }: { active: string; groups: st
                                   alignItems: "center",
                                   gap: 8,
                                   width: "100%",
-                                  padding: "6px 12px",
+                                  padding: "6px 4px",
                                   borderRadius: 8,
                                   fontSize: 12,
                                   color: isChildActive ? "#1B1B1B" : "#888888",
@@ -153,6 +159,13 @@ function SidebarContent({ active, groups, onJump }: { active: string; groups: st
                                 }}
                               >
                                 {child.label}
+                                <span style={{ flex: 1 }} />
+                                <svg 
+                                  width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                                  style={{ opacity: isChildActive ? 0.6 : 0, transition: "opacity 0.2s", color: "#007F6A" }}
+                                >
+                                  <polyline points="9 18 15 12 9 6"></polyline>
+                                </svg>
                               </button>
                             );
                           })}
@@ -424,16 +437,53 @@ export default function DocsPage() {
         .text-roll-inner {
           will-change: transform;
         }
+        .step-heading {
+          position: relative;
+          padding-left: 64px;
+          margin-top: 64px !important;
+          margin-bottom: 32px !important;
+          font-weight: 700;
+          letter-spacing: -0.01em;
+        }
+        .step-number {
+          position: absolute;
+          left: 0;
+          top: -4px;
+          width: 36px;
+          height: 36px;
+          background: #1B1B1B;
+          color: #FFFFFF;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+          font-weight: 700;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        /* Nested Step Styling */
+        h3.step-heading {
+          padding-left: 56px;
+          margin-top: 40px !important;
+          margin-left: 20px;
+        }
+        h3.step-heading .step-number {
+          width: 28px;
+          height: 28px;
+          font-size: 11px;
+          top: 0px;
+          background: #666; /* Sub-steps use a lighter gray */
+        }
         @media (min-width: 1024px) {
           .docs-layout { 
             display: grid !important;
-            grid-template-columns: 340px 1fr !important; 
+            grid-template-columns: 280px 1fr !important; 
           }
         }
         @media (min-width: 1280px) {
           .docs-layout { 
             display: grid !important;
-            grid-template-columns: 340px 1fr 340px !important; 
+            grid-template-columns: 280px 1fr 280px !important; 
           }
         }
       `}} />
@@ -451,119 +501,126 @@ export default function DocsPage() {
 
 
       {/* Desktop Sidebar */}
-      <aside className="docs-sidebar hidden lg:block" style={{ position: "fixed", left: 0, width: 340, top: 60, height: "calc(100vh - 60px)", overflowY: "auto", borderRight: "1px solid var(--border)", padding: "32px 32px" }}>
+      <aside className="docs-sidebar hidden lg:block" style={{ position: "fixed", left: 0, width: 280, top: 60, height: "calc(100vh - 60px)", overflowY: "auto", borderRight: "1px solid var(--border)", padding: "32px 8px 32px 20px" }}>
         <SidebarContent active={active} groups={groups} onJump={jump} />
-      </aside>
-
-      {/* Right Sidebar (Table of Contents) */}
-      <aside className="hidden xl:block" style={{ position: "fixed", right: 0, width: 340, top: 60, height: "calc(100vh - 60px)", overflowY: "auto", borderLeft: "1px solid var(--border)", padding: "32px 32px" }}>
-        {toc.length > 0 && (
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 400, color: "#999", marginBottom: 16 }}>On this page</div>
-            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
-              {toc.map(item => {
-                const isActive = activeHeading === item.id;
-                return (
-                  <li key={item.id}>
-                    <a
-                      href={`#${item.id}`}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' });
-                        setActiveHeading(item.id);
-                      }}
-                      style={{
-                        fontSize: 13,
-                        color: isActive ? "#007F6A" : "#666",
-                        fontWeight: isActive ? 500 : 400,
-                        textDecoration: "none",
-                        transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-                        display: "inline-block",
-                        transform: isActive ? "translateX(4px)" : "none"
-                      }}
-                    >
-                      {item.title}
-                    </a>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        )}
       </aside>
 
       {/* Main Layout Grid */}
       <div className="docs-layout grid grid-cols-1" style={{ minHeight: "100vh" }}>
         <div className="hidden lg:block" />
-        <main ref={contentRef} className="docs-content" style={{ padding: "80px 64px 120px 80px", width: "100%", maxWidth: "840px", margin: "0 auto", minHeight: "80vh", display: "flex", flexDirection: "column" }}>
-          
-          <div key={active} className="docs-section animate-in fade-in slide-in-from-bottom-4 duration-500" style={{ flex: 1 }}>
-            <Breadcrumb items={[DOCS_SECTIONS.find(s => s.id === active)?.group || "Docs", activeLabel]} />
-            {isLoading && !docsCache[active] ? (
-              <div style={{ padding: "40px 0", color: "#999", fontSize: 14 }}>Loading...</div>
-            ) : content ? (
-              <MarkdownRenderer content={content} id={active} />
-            ) : (
-              <div style={{ padding: "40px 0", color: "#666" }}>Section content not found.</div>
-            )}
-          </div>
-
-          {/* Pagination Navigation */}
-          <div style={{ marginTop: 80, borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: 40 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 60 }}>
-              {(() => {
-                const currentIndex = DOCS_SECTIONS.findIndex(s => s.id === active);
-                const prev = currentIndex > 0 ? DOCS_SECTIONS[currentIndex - 1] : null;
-                return prev ? (
-                  <button onClick={() => jump(prev.id)} style={{ textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                    <div style={{ fontSize: 11, color: "#999", marginBottom: 4 }}>Previous</div>
-                    <div style={{ fontSize: 18, fontWeight: 600, color: "#1B1B1B", display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontSize: 24 }}>‹</span> {prev.label}
-                    </div>
-                  </button>
-                ) : <div />;
-              })()}
-              {(() => {
-                const currentIndex = DOCS_SECTIONS.findIndex(s => s.id === active);
-                const next = currentIndex < DOCS_SECTIONS.length - 1 ? DOCS_SECTIONS[currentIndex + 1] : null;
-                return next ? (
-                  <button onClick={() => jump(next.id)} style={{ textAlign: "right", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                    <div style={{ fontSize: 11, color: "#999", marginBottom: 4 }}>Next</div>
-                    <div style={{ fontSize: 18, fontWeight: 600, color: "#1B1B1B", display: "flex", alignItems: "center", gap: 8 }}>
-                      {next.label} <span style={{ fontSize: 24 }}>›</span>
-                    </div>
-                  </button>
-                ) : <div />;
-              })()}
+        <main ref={contentRef} className="docs-content" style={{ padding: "80px 48px 120px 48px", width: "100%", maxWidth: "1000px", minHeight: "80vh", display: "flex", flexDirection: "row", gap: 48 }}>
+          <div style={{ flex: 1, maxWidth: "720px" }}>
+            <div key={active} className="docs-section animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <Breadcrumb items={[DOCS_SECTIONS.find(s => s.id === active)?.group || "Docs", activeLabel]} />
+              {isLoading && !docsCache[active] ? (
+                <div style={{ padding: "40px 0", color: "#999", fontSize: 14 }}>Loading...</div>
+              ) : content ? (
+                <MarkdownRenderer content={content} id={active} />
+              ) : (
+                <div style={{ padding: "40px 0", color: "#666" }}>Section content not found.</div>
+              )}
             </div>
 
-            {/* Abstract Feedback Pill */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-              <div style={{ background: "transparent", borderRadius: 100, padding: "10px 24px", display: "flex", alignItems: "center", gap: 20, border: "1px solid #000000", boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
-                <div className="text-roll-container" style={{ width: userReaction ? 155 : 115, transition: "width 0.5s cubic-bezier(0.32, 0.72, 0, 1)" }}>
-                  <div ref={rollInnerRef} className="text-roll-inner">
-                    <div style={{ height: 20, lineHeight: "20px", fontSize: 13, color: "#1B1B1B", fontWeight: 500 }}>Was this helpful?</div>
-                    <div style={{ height: 20, lineHeight: "20px", fontSize: 13, color: "#1B1B1B", fontWeight: 500 }}>Thanks for your feedback!</div>
+            {/* Pagination Navigation */}
+            <div style={{ marginTop: 80, borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: 40 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 60 }}>
+                {(() => {
+                  const currentIndex = DOCS_SECTIONS.findIndex(s => s.id === active);
+                  const prev = currentIndex > 0 ? DOCS_SECTIONS[currentIndex - 1] : null;
+                  return prev ? (
+                    <button onClick={() => jump(prev.id)} style={{ textAlign: "left", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                      <div style={{ fontSize: 11, color: "#999", marginBottom: 4 }}>Previous</div>
+                      <div style={{ fontSize: 18, fontWeight: 600, color: "#1B1B1B", display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 24 }}>‹</span> {prev.label}
+                      </div>
+                    </button>
+                  ) : <div />;
+                })()}
+                {(() => {
+                  const currentIndex = DOCS_SECTIONS.findIndex(s => s.id === active);
+                  const next = currentIndex < DOCS_SECTIONS.length - 1 ? DOCS_SECTIONS[currentIndex + 1] : null;
+                  return next ? (
+                    <button onClick={() => jump(next.id)} style={{ textAlign: "right", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                      <div style={{ fontSize: 11, color: "#999", marginBottom: 4 }}>Next</div>
+                      <div style={{ fontSize: 18, fontWeight: 600, color: "#1B1B1B", display: "flex", alignItems: "center", gap: 8 }}>
+                        {next.label} <span style={{ fontSize: 24 }}>›</span>
+                      </div>
+                    </button>
+                  ) : <div />;
+                })()}
+              </div>
+
+              {/* Abstract Feedback Pill */}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+                <div style={{ background: "transparent", borderRadius: 100, padding: "10px 24px", display: "flex", alignItems: "center", gap: 20, border: "1px solid #000000", boxShadow: "0 2px 10px rgba(0,0,0,0.05)" }}>
+                  <div className="text-roll-container" style={{ width: userReaction ? 155 : 115, transition: "width 0.5s cubic-bezier(0.32, 0.72, 0, 1)" }}>
+                    <div ref={rollInnerRef} className="text-roll-inner">
+                      <div style={{ height: 20, lineHeight: "20px", fontSize: 13, color: "#1B1B1B", fontWeight: 500 }}>Was this helpful?</div>
+                      <div style={{ height: 20, lineHeight: "20px", fontSize: 13, color: "#1B1B1B", fontWeight: 500 }}>Thanks for your feedback!</div>
+                    </div>
+                  </div>
+                  
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={() => handleFeedback(active, "sad")} className={`feedback-btn flex items-center justify-center w-10 h-10 rounded-full ${userReaction === "sad" ? "active" : ""}`} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                      <Frown size={20} strokeWidth={1.5} />
+                    </button>
+                    <button onClick={() => handleFeedback(active, "neutral")} className={`feedback-btn flex items-center justify-center w-10 h-10 rounded-full ${userReaction === "neutral" ? "active" : ""}`} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                      <Meh size={20} strokeWidth={1.5} />
+                    </button>
+                    <button onClick={() => handleFeedback(active, "smile")} className={`feedback-btn flex items-center justify-center w-10 h-10 rounded-full ${userReaction === "smile" ? "active" : ""}`} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
+                      <Smile size={20} strokeWidth={1.5} />
+                    </button>
                   </div>
                 </div>
-                
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={() => handleFeedback(active, "sad")} className={`feedback-btn flex items-center justify-center w-10 h-10 rounded-full ${userReaction === "sad" ? "active" : ""}`} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                    <Frown size={20} strokeWidth={1.5} />
-                  </button>
-                  <button onClick={() => handleFeedback(active, "neutral")} className={`feedback-btn flex items-center justify-center w-10 h-10 rounded-full ${userReaction === "neutral" ? "active" : ""}`} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                    <Meh size={20} strokeWidth={1.5} />
-                  </button>
-                  <button onClick={() => handleFeedback(active, "smile")} className={`feedback-btn flex items-center justify-center w-10 h-10 rounded-full ${userReaction === "smile" ? "active" : ""}`} style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-                    <Smile size={20} strokeWidth={1.5} />
-                  </button>
+                <div style={{ fontSize: 11, color: "#999999", fontWeight: 400, letterSpacing: "0.01em" }}>
+                  Your feedback helps us improve the platform.
                 </div>
-              </div>
-              <div style={{ fontSize: 11, color: "#999999", fontWeight: 400, letterSpacing: "0.01em" }}>
-                Your feedback helps us improve the platform.
               </div>
             </div>
           </div>
+
+          {/* Right Sidebar (Table of Contents) - Sticky inside content area */}
+          <aside className="hidden xl:block" style={{ width: 240, position: "sticky", top: 120, height: "fit-content", padding: "0 0 40px 0" }}>
+            {toc.length > 0 && (
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#1B1B1B", marginBottom: 20, display: "flex", alignItems: "center", gap: 8 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="21" y1="10" x2="7" y2="10"></line><line x1="21" y1="6" x2="3" y2="6"></line><line x1="21" y1="14" x2="3" y2="14"></line><line x1="21" y1="18" x2="7" y2="18"></line></svg>
+                  On this page
+                </div>
+                <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+                  {toc.map(item => {
+                    const isActive = activeHeading === item.id;
+                    return (
+                      <li key={item.id}>
+                        <a
+                          href={`#${item.id}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' });
+                            setActiveHeading(item.id);
+                          }}
+                          style={{
+                            fontSize: 13,
+                            color: isActive ? "#007F6A" : "#888",
+                            fontWeight: isActive ? 500 : 400,
+                            textDecoration: "none",
+                            transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                            display: "block",
+                            paddingLeft: 2,
+                            borderLeft: `2px solid ${isActive ? "#007F6A" : "transparent"}`,
+                            marginLeft: -2,
+                            padding: "4px 0 4px 12px"
+                          }}
+                        >
+                          {item.title}
+                        </a>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+          </aside>
         </main>
 
         <div className="hidden xl:block" />
