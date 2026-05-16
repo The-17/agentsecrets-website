@@ -311,7 +311,6 @@ export default function DocsPage() {
 
   // 4. Feedback State (Persistent per section)
   const [feedback, setFeedback] = useState<Record<string, string>>({});
-  const rollInnerRef = useRef<HTMLDivElement>(null);
 
   // 5. Table of Contents & ScrollSpy
   const [toc, setToc] = useState<{id: string, title: string}[]>([]);
