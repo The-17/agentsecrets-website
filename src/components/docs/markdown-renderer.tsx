@@ -146,7 +146,7 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
     // This prevents the ::: marker from the tabs being confused with the ::: marker from the steps
     processed = processed.replace(/:::tabs\s*([\s\S]*?)\s*:::/g, (_: string, inner: string) => {
       const tabs: { label: string, content: string }[] = [];
-      const parts = inner.split(/^##\s+/m).filter(Boolean);
+      const parts = inner.split(/^#{2,3}\s+/m).filter(Boolean);
       
       parts.forEach((part: string) => {
         const lines = part.split('\n');
