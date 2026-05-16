@@ -94,7 +94,9 @@ function SidebarContent({ active, groups, onJump }: { active: string; groups: st
                   return (
                     <div key={s.id}>
                       <button
-                        onClick={() => onJump(s.id)}
+                        onClick={() => {
+                          onJump(s.id);
+                        }}
                         style={{
                           display: "flex",
                           alignItems: "center",
@@ -109,7 +111,7 @@ function SidebarContent({ active, groups, onJump }: { active: string; groups: st
                           cursor: "pointer",
                           transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
                           textAlign: "left",
-                          marginBottom: children.length > 0 && isParentOrChildActive ? 4 : 2,
+                          marginBottom: 2,
                           fontFamily: "inherit",
                           fontWeight: isActive ? 500 : 400
                         }}
@@ -123,54 +125,75 @@ function SidebarContent({ active, groups, onJump }: { active: string; groups: st
                           flexShrink: 0,
                         }} />
                         <span style={{ flex: 1 }}>{s.label}</span>
-                        <svg 
-                          width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                          style={{ opacity: isActive ? 0.8 : 0, transition: "opacity 0.2s", color: "#007F6A" }}
-                        >
-                          <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
+                        {children.length > 0 && (
+                          <svg 
+                            width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                            style={{ 
+                              opacity: 0.5, 
+                              transform: isParentOrChildActive ? "rotate(0deg)" : "rotate(-90deg)", 
+                              transition: "transform 0.2s ease",
+                              color: isParentOrChildActive ? "#007F6A" : "inherit" 
+                            }}
+                          >
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                          </svg>
+                        )}
+                        {children.length === 0 && (
+                          <svg 
+                            width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                            style={{ opacity: isActive ? 0.8 : 0, transition: "opacity 0.2s", color: "#007F6A" }}
+                          >
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                          </svg>
+                        )}
                       </button>
 
-                      {children.length > 0 && isParentOrChildActive && (
-                        <div style={{ paddingLeft: 16, marginBottom: 8 }}>
-                          {children.map(child => {
-                            const isChildActive = active === child.id;
-                            return (
-                              <button
-                                key={child.id}
-                                onClick={() => onJump(child.id)}
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 8,
-                                  width: "100%",
-                                  padding: "6px 4px",
-                                  borderRadius: 8,
-                                  fontSize: 12,
-                                  color: isChildActive ? "#1B1B1B" : "#888888",
-                                  background: isChildActive ? "rgba(0,255,135,0.05)" : "transparent",
-                                  border: `1px solid ${isChildActive ? "rgba(0,127,106,0.1)" : "transparent"}`,
-                                  cursor: "pointer",
-                                  transition: "all 0.2s",
-                                  textAlign: "left",
-                                  marginBottom: 2,
-                                  fontFamily: "inherit",
-                                  fontWeight: isChildActive ? 500 : 400
-                                }}
-                              >
-                                {child.label}
-                                <span style={{ flex: 1 }} />
-                                <svg 
-                                  width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                                  style={{ opacity: isChildActive ? 0.6 : 0, transition: "opacity 0.2s", color: "#007F6A" }}
+                      <div style={{ 
+                        display: "grid", 
+                        gridTemplateRows: (children.length > 0 && isParentOrChildActive) ? "1fr" : "0fr",
+                        transition: "grid-template-rows 0.3s ease",
+                      }}>
+                        <div style={{ overflow: "hidden" }}>
+                          <div style={{ paddingLeft: 16, marginBottom: 8, marginTop: 4 }}>
+                            {children.map(child => {
+                              const isChildActive = active === child.id;
+                              return (
+                                <button
+                                  key={child.id}
+                                  onClick={() => onJump(child.id)}
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 8,
+                                    width: "100%",
+                                    padding: "6px 4px",
+                                    borderRadius: 8,
+                                    fontSize: 12,
+                                    color: isChildActive ? "#1B1B1B" : "#888888",
+                                    background: isChildActive ? "rgba(0,255,135,0.05)" : "transparent",
+                                    border: `1px solid ${isChildActive ? "rgba(0,127,106,0.1)" : "transparent"}`,
+                                    cursor: "pointer",
+                                    transition: "all 0.2s",
+                                    textAlign: "left",
+                                    marginBottom: 2,
+                                    fontFamily: "inherit",
+                                    fontWeight: isChildActive ? 500 : 400
+                                  }}
                                 >
-                                  <polyline points="9 18 15 12 9 6"></polyline>
-                                </svg>
-                              </button>
-                            );
-                          })}
+                                  {child.label}
+                                  <span style={{ flex: 1 }} />
+                                  <svg 
+                                    width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                                    style={{ opacity: isChildActive ? 0.6 : 0, transition: "opacity 0.2s", color: "#007F6A" }}
+                                  >
+                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                  </svg>
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
-                      )}
+                      </div>)}
                     </div>
                   );
                 })}

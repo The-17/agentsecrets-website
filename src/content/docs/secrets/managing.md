@@ -1,16 +1,20 @@
-# Managing Secrets
+# agentsecrets secrets — Manage your credentials
 
 Secrets are named credentials stored in your OS keychain, scoped to a project and environment. This page covers the day-to-day operations: setting, listing, and deleting secrets.
+
+
+The `agentsecrets secrets` commands let you store, retrieve, sync, and audit credentials for your active project. Every value is encrypted client-side with AES-256-GCM before it leaves your machine. The server only stores ciphertext it structurally cannot decrypt. Your agents reference key names; they never hold the values.
 
 ---
 
 ## Setting a secret
+Store or update one or more secrets use the `secrets set` command. Values are encrypted locally before being sent to the cloud.
+
+### Usage
 
 ```bash
 agentsecrets secrets set KEY_NAME=value
 ```
-
-The value goes directly to the OS keychain for the active workspace, project, and environment. It is never written to disk in plaintext and never sent to the AgentSecrets server in plaintext.
 
 Set multiple secrets at once:
 
@@ -26,7 +30,20 @@ agentsecrets secrets set ANALYTICS_KEY=value --all-envs
 
 This prompts for confirmation before writing to all three environments.
 
+### What happens
+1. Reads the workspace key from `~/.agentsecrets/config.json`.
+2. Encrypts each value: `ciphertext = AES-GCM(workspace_key, nonce, value)`.
+3. Sends `{ key, ciphertext+nonce }` to the API, the server stores the blob only.
+4. If your storage mode is Keychain, also writes the value to your OS keychain.
+
+
+### Flags
+| Flag | Description |
+| --- | --- |
+| `--all-envs` | Set the secret in all three environments (development, staging, production) simultaneously. Prompts for confirmation. |
+
 ---
+
 
 ## Listing secrets
 
@@ -39,11 +56,22 @@ Lists key names only, never values. The output shows cross-environment coverage 
 ```
 Environment: development
 
-KEY             DEV   STAGING   PROD
-STRIPE_KEY       ✓       ✓        ✓
-OPENAI_KEY       ✓       ✓        ✗  ← missing in production
-DATABASE_URL     ✓       ✗        ✗  ← missing in staging and production
+Key              DEV  STAGING  PROD
+DATABASE_URL      *      *      *
+OPENAI_KEY        *      *      -
+SENDGRID_KEY      *      -      -
+STRIPE_KEY        *      *      *
+
+Showing cached keys. Use --remote for latest from cloud.
 ```
+
+`*` means the key is present in that environment; `-` means it is absent.
+
+### Flags
+| Flag | Description |
+| --- | --- |
+| `--remote` | Fetch the latest key list from the cloud instead of the local cache (OS Keychain). |
+
 
 
 ## Deleting a secret
@@ -52,20 +80,30 @@ DATABASE_URL     ✓       ✗        ✗  ← missing in staging and production
 agentsecrets secrets delete KEY_NAME
 ```
 
-Removes the secret from the active environment only. This is permanent. To delete from all environments, switch and delete for each:
+Removes the secret from the the cloud and your os keychain in the active environment only. This is permanent. To delete from all environments, switch and delete for each
 
-```bash
-agentsecrets environment switch development
-agentsecrets secrets delete OLD_KEY
-
-agentsecrets environment switch staging
-agentsecrets secrets delete OLD_KEY
-
-agentsecrets environment switch production
-agentsecrets secrets delete OLD_KEY
+### Usage
+```bash 
+agentsecrets secrets delete KEY
 ```
 
-Or use `agentsecrets environment clean` to remove all secrets in the current environment at once.
+The CLI deletes the key from the remote API, your OS keychain (Keychain mode), and your .env file (Standard mode). When your active environment is production, you are prompted to confirm before the deletion proceeds.
+
+> [NOTE]
+> This is permanent. To delete from all environments, switch and delete for each:
+> ```bash
+> agentsecrets environment switch development
+> agentsecrets secrets delete OLD_KEY
+> 
+> agentsecrets environment switch staging
+> agentsecrets secrets delete OLD_KEY
+> 
+> agentsecrets environment switch production
+> agentsecrets secrets delete OLD_KEY
+> ```
+>
+> Or use `agentsecrets environment clean` to remove all secrets in the current environment at once.
+>
 
 ---
 
@@ -86,4 +124,4 @@ Keep names consistent across environments. If `STRIPE_KEY` is the name in develo
 
 Use names that identify the service. `API_KEY` is ambiguous when you have ten secrets. `STRIPE_LIVE_KEY` is not.
 
-Do not encode the environment in the key name. You do not need `STRIPE_KEY_PRODUCTION` — the active environment context already scopes which value is resolved.
+Do not encode the environment in the key name. You do not need `STRIPE_KEY_PRODUCTION`, the active environment context already scopes which value is resolved.

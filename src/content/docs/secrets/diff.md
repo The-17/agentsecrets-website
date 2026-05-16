@@ -4,41 +4,52 @@
 agentsecrets secrets diff
 ```
 
-Compares your local keychain state against the cloud for the active environment and reports what is out of sync:
+Compare your local secrets against what is stored in the cloud, or compare two environments directly.
 
-```
-LOCAL ONLY:   NEW_KEY          ← exists locally, not pushed yet
-REMOTE ONLY:  DEPRECATED_KEY   ← exists in cloud, not pulled yet
-DIFFERS:      DATABASE_URL     ← remote is newer than local
-```
-
-**Local only** means the key exists in your keychain but has not been pushed. 
-**Remote only** means it exists in cloud but has not been pulled. 
-**Differs** means the remote version is newer. 
-
-Pull to get the latest. Push to share your changes.
-
-`secrets diff` compares encrypted blob metadata — it does not compare plaintext values and does not reveal values in its output.
-
-
-### Cross-environment diff
-
+### Usage
 ```bash
+# Compare local vs. active cloud environment
+agentsecrets secrets diff
+
+# Compare two environments
 agentsecrets secrets diff --from development --to production
 ```
 
-Shows which key names exist in one environment but are missing in another. Does not compare values — only key name coverage:
+### Flags
+
+| Flag | Description |
+| :--- | :--- |
+| `--from <env>` | Source environment for a cross-environment diff. |
+| `--to <env>` | Target environment for a cross-environment diff. |
+
+**What the output shows**
+
+- **In source but missing in target** — present on your machine (or in the source environment), not yet pushed or copied.
+- **In target but missing in source** — in the cloud (or target environment), not yet pulled or copied.
+- **In both but values differ** — key exists in both places but the values have drifted.
+- **In both and identical** — fully synced.
+
+Values are never shown. Only key names and their sync status appear.
 
 ```
-In development but missing in production:
-  OPENAI_KEY
-  DATABASE_URL
+SECRETS:
 
-In production but missing in development:
-  (none)
+  In Local but missing in Development:
+    NEW_KEY
 
-Present in both:
-  STRIPE_KEY
+  In Development but missing in Local:
+    DEPRECATED_KEY
+
+  In both but values differ:
+    DATABASE_URL
+
+  In both and identical:
+    OPENAI_KEY
+    STRIPE_KEY
+
+Run agentsecrets secrets push to upload local changes.
+Run agentsecrets secrets pull to sync from cloud.
 ```
 
-This is useful before deploying to production, run it to catch any secrets that exist in development but have not been configured in production yet.
+Run `secrets diff` before a deployment, before pushing, or to debug sync issues between environments.
+
