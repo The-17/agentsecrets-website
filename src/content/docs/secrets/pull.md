@@ -16,8 +16,6 @@ In storage mode 1, pull writes directly to the OS keychain. No file is created o
 In storage mode 2, pull writes to the OS keychain and also writes the decrypted values to `.env.{environment}` in your project root. In both modes, pull generates `.env.example` with key names and environment annotations but no values, this file is safe to commit.
 
 
-## 
-
 ## Pulling a specific environment
 
 Pull operates on the active environment only. To pull for a specific environment:
@@ -35,8 +33,8 @@ If a key already exists locally with a different value, the CLI shows the confli
 ### Flags
 
 | Flag | Short | Description |
-| :--- | :--- | :--- |
-| `--force` | `-f` | Overwrite local values without prompting for conflict resolution. |
+| :---       | :--- | :--- |
+| `--force`     | `-f` | Overwrite local values without prompting for conflict resolution. |
 
 
 

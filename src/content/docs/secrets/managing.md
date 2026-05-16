@@ -70,7 +70,7 @@ Showing cached keys. Use --remote for latest from cloud.
 ### Flags
 | Flag | Description |
 | --- | --- |
-| `--remote` | Fetch the latest key list from the cloud instead of the local cache (OS Keychain). |
+| `--remote`    | Fetch the latest key list from the cloud instead of the local cache (OS Keychain). |
 
 
 
@@ -125,3 +125,4 @@ Keep names consistent across environments. If `STRIPE_KEY` is the name in develo
 Use names that identify the service. `API_KEY` is ambiguous when you have ten secrets. `STRIPE_LIVE_KEY` is not.
 
 Do not encode the environment in the key name. You do not need `STRIPE_KEY_PRODUCTION`, the active environment context already scopes which value is resolved.
+
