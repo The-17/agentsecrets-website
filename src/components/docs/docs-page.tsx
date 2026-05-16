@@ -193,7 +193,7 @@ function SidebarContent({ active, groups, onJump }: { active: string; groups: st
                             })}
                           </div>
                         </div>
-                      </div>)}
+                      </div>
                     </div>
                   );
                 })}
