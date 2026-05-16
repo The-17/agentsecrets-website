@@ -191,6 +191,8 @@ export default function DocsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const rollInnerRef = useRef<HTMLDivElement>(null);
+  const tocRef = useRef<HTMLElement>(null);
   const searchParams = useSearchParams();
 
   // 1. Resolve section from URL
@@ -410,6 +412,18 @@ export default function DocsPage() {
     return () => observer.disconnect();
   }, [content, active, isLoading]);
 
+  // Sync TOC scroll with active heading
+  useEffect(() => {
+    if (!activeHeading || !tocRef.current) return;
+    const activeLink = tocRef.current.querySelector(`a[href="#${activeHeading}"]`);
+    if (activeLink) {
+      activeLink.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }
+  }, [activeHeading]);
+
   const jump = (id: string, headingId?: string) => {
     setActive(id);
     setDrawerOpen(false);
@@ -502,7 +516,7 @@ export default function DocsPage() {
       </aside>
 
       {/* Right Sidebar (Table of Contents) */}
-      <aside className="hidden xl:block" style={{ position: "fixed", right: 0, width: 380, top: 60, height: "calc(100vh - 60px)", overflowY: "auto", borderLeft: "1px solid var(--border)", padding: "32px 32px" }}>
+      <aside ref={tocRef} className="hidden xl:block" style={{ position: "fixed", right: 0, width: 380, top: 60, height: "calc(100vh - 60px)", overflowY: "auto", borderLeft: "1px solid var(--border)", padding: "32px 32px" }}>
         {toc.length > 0 && (
           <div>
             <div style={{ fontSize: 13, fontWeight: 600, color: "#1B1B1B", marginBottom: 20, display: "flex", alignItems: "center", gap: 8 }}>

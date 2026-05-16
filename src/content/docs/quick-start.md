@@ -106,12 +106,14 @@ agentsecrets secrets push
 # Encrypts locally, uploads ciphertext
 # You can delete the .env file after this
 ```
-:::
 
 Confirm what’s stored (key names only, values are never displayed):
 ```bash
 agentsecrets secrets list
 ```
+:::
+
+
 
 
 ### 5. Authorize your domains
@@ -129,7 +131,8 @@ agentsecrets workspace allowlist list
 > [WARNING]
 > This step is required. The proxy will return a 403 for any domain not on the allowlist, regardless of whether a matching secret exists. This is intentional — the domain check happens before secret resolution.
 
-Allowlist changes require admin role and password confirmation.
+> [INFO]
+> Allowlist changes require admin role and password confirmation.
 :::
 
 
