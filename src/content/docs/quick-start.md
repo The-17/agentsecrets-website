@@ -11,6 +11,8 @@ This guide walks you through everything you need to go from a fresh install to y
 
 Choose the installation method that fits your environment.
 
+::tabs
+
 ```bash
 # Homebrew (macOS / Linux) — recommended
 brew install The-17/tap/agentsecrets
@@ -24,6 +26,8 @@ pip install agentsecrets-cli
 # Go
 go install github.com/The-17/agentsecrets/cmd/agentsecrets@latest
 ```
+
+:::
 
 Verify your installation with:
 

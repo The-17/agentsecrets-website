@@ -83,4 +83,5 @@ go install github.com/The-17/agentsecrets/cmd/agentsecrets@latest
 ```
 :::
 
-Run `agentsecrets --version` after upgrading to confirm the new version is active.
+> [TIP]
+> Run `agentsecrets --version` after upgrading to confirm the new version is active.
