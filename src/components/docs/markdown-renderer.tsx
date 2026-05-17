@@ -178,25 +178,265 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
     }
   }, []);
 
-  const toggleCheckbox = (cbId: string) => {
-    const newProgress = { ...progress, [cbId]: !progress[cbId] };
-    setProgress(newProgress);
-    localStorage.setItem("agentsecrets_progress", JSON.stringify(newProgress));
-  };
+  const toggleCheckbox = React.useCallback((cbId: string) => {
+    setProgress((prev) => {
+      const newProgress = { ...prev, [cbId]: !prev[cbId] };
+      localStorage.setItem("agentsecrets_progress", JSON.stringify(newProgress));
+      return newProgress;
+    });
+  }, []);
 
+  const lineToId: Record<number, string> = {};
   const idCounts: Record<string, number> = {};
+  content.split('\n').forEach((lineStr, index) => {
+    const match = lineStr.match(/^(#{2,3})\s+(.*)$/);
+    if (match) {
+      const rawTitle = match[2].trim();
+      let id = rawTitle.toLowerCase().replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
+      if (idCounts[id] !== undefined) {
+        idCounts[id]++;
+        id = `${id}-${idCounts[id]}`;
+      } else {
+        idCounts[id] = 0;
+      }
+      lineToId[index + 1] = id;
+    }
+  });
+
+  const memoizedComponents = React.useMemo(() => ({
+    h2({ node, children, ...props }: any) {
+      let text = "";
+      React.Children.forEach(children, (child: any) => { if (typeof child === "string") text += child; });
+      const stepMatch = text.match(/^(?:(?:Step|Stage)\s+)?(\d+)(?:\s*[—:\-\.]\s+)(.*)$/i);
+      
+      let generatedId = lineToId[node?.position?.start?.line];
+      if (!generatedId) {
+        generatedId = text.toLowerCase().replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
+      }
+
+      if (stepMatch) {
+        return (
+          <h2 id={generatedId} className="step-heading" style={{ scrollMarginTop: "100px" }} {...props}>
+            <span className="step-number">{stepMatch[1]}</span>
+            {stepMatch[2]}
+          </h2>
+        );
+      }
+      return <h2 id={generatedId} style={{ scrollMarginTop: "100px" }} {...props}>{children}</h2>;
+    },
+    h3({ node, children, ...props }: any) {
+      let text = "";
+      React.Children.forEach(children, (child: any) => { if (typeof child === "string") text += child; });
+      const stepMatch = text.match(/^(?:(?:Step|Stage)\s+)?(\d+)(?:\s*[—:\-\.]\s+)(.*)$/i);
+      
+      let generatedId = lineToId[node?.position?.start?.line];
+      if (!generatedId) {
+        generatedId = text.toLowerCase().replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
+      }
+
+      if (stepMatch) {
+        return (
+          <h3 id={generatedId} className="step-heading" style={{ scrollMarginTop: "100px" }} {...props}>
+            <span className="step-number">{stepMatch[1]}</span>
+            {stepMatch[2]}
+          </h3>
+        );
+      }
+      return <h3 id={generatedId} style={{ scrollMarginTop: "100px" }} {...props}>{children}</h3>;
+    },
+    p({ children }: any) {
+      const childrenArray = React.Children.toArray(children);
+      const containsCheckbox = childrenArray.some(
+        (child) => typeof child === "string" && /\[[ x]\]/.test(child)
+      );
+
+      if (!containsCheckbox) return <p>{children}</p>;
+
+      const prefix: React.ReactNode[] = [];
+      const items: { content: React.ReactNode[] }[] = [];
+      let currentItem: React.ReactNode[] | null = null;
+
+      childrenArray.forEach((child: any) => {
+        if (typeof child === "string") {
+          const parts = child.split(/(\[[ x]\])/g);
+          parts.forEach((part: string) => {
+            if (part === "[ ]" || part === "[x]") {
+              currentItem = [];
+              items.push({ content: currentItem });
+            } else if (currentItem) {
+              currentItem.push(part);
+            } else if (part) {
+              prefix.push(part);
+            }
+          });
+        } else {
+          if (currentItem) currentItem.push(child);
+          else prefix.push(child);
+        }
+      });
+
+      return (
+        <div style={{ marginBottom: 20 }}>
+          {prefix.length > 0 && <p style={{ marginBottom: 12 }}>{prefix}</p>}
+          {items.map((item: any, idx: number) => {
+            let contentText = "";
+            item.content.forEach((c: any) => { if (typeof c === "string") contentText += c; });
+            if (!contentText.trim() && item.content.length === 0) return null;
+
+            const cbId = `${sectionId}:${contentText.trim().slice(0, 50).replace(/\s+/g, '-')}`;
+            const isChecked = progress[cbId] || false;
+
+            return (
+              <div 
+                key={`cb-${idx}`} 
+                className={`checkbox-row ${isChecked ? 'checked' : ''}`}
+                onClick={() => toggleCheckbox(cbId)}
+              >
+                <div className="checkbox-box">
+                  {isChecked && (
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  )}
+                </div>
+                <div className="checkbox-text" style={{ flex: 1 }}>{item.content}</div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    },
+    blockquote({ children }: any) {
+      const childrenArray = React.Children.toArray(children);
+      
+      let allText = "";
+      const walk = (node: any) => {
+        if (typeof node === 'string') allText += node;
+        else if (node?.props?.children) {
+          React.Children.forEach(node.props.children, walk);
+        }
+      };
+      childrenArray.forEach(walk);
+
+      const markerRegex = /\[(WARNING|TIP|LIGHTBULB|INFO|NOTE|CAUTION|DANGER|STOP)\]/i;
+      const match = allText.match(markerRegex);
+      
+      if (match) {
+        const markerText = match[0];
+        const typeStr = match[1].toUpperCase();
+        let type: 'warning' | 'tip' | 'info' | 'caution' = 'info';
+        
+        if (typeStr === 'WARNING') type = 'warning';
+        else if (typeStr === 'TIP' || typeStr === 'LIGHTBULB') type = 'tip';
+        else if (typeStr === 'CAUTION' || typeStr === 'DANGER' || typeStr === 'STOP') type = 'caution';
+
+        const icons = {
+          warning: <AlertTriangle size={16} />,
+          tip: <Lightbulb size={16} />,
+          info: <Info size={16} />,
+          caution: <AlertOctagon size={16} />
+        };
+        const colors = {
+          warning: '#B25E00',
+          tip: '#007F6A',
+          info: '#0056B3',
+          caution: '#B91C1C'
+        };
+
+        let markerRemoved = false;
+        const clean = (node: any): any => {
+          if (typeof node === 'string') {
+            if (!markerRemoved && node.toUpperCase().includes(markerText.toUpperCase())) {
+              markerRemoved = true;
+              return node.replace(new RegExp(`\\s*\\${markerText}\\s*`, 'i'), "").trim();
+            }
+            return node;
+          }
+          if (node && node.props && node.props.children) {
+            return React.cloneElement(node, {
+              children: React.Children.map(node.props.children, clean)
+            });
+          }
+          return node;
+        };
+
+        const cleanedChildren = React.Children.map(children, clean);
+
+        return (
+          <blockquote className={type} style={{ display: "flex", gap: "16px", alignItems: "flex-start", padding: "16px 20px" }}>
+            <div style={{ color: colors[type], marginTop: "4px", flexShrink: 0 }}>
+              {icons[type]}
+            </div>
+            <div style={{ flex: 1 }}>
+              {cleanedChildren}
+            </div>
+          </blockquote>
+        );
+      }
+
+      return <blockquote>{children}</blockquote>;
+    },
+    table({ children, ...props }: any) {
+      return (
+        <div style={{ margin: "28px 0", borderRadius: 12, overflow: "hidden", border: "1px solid rgba(0,0,0,0.08)", width: "100%", overflowX: "auto" }}>
+          <table {...props}>{children}</table>
+        </div>
+      );
+    },
+    'terminal-tabs': (props: any) => {
+      const tabsData = props["data-tabs"];
+      if (tabsData) {
+        try {
+          const tabs = JSON.parse(tabsData.replace(/&apos;/g, "'"));
+          return <TerminalTabs tabs={tabs} />;
+        } catch (e) {
+          console.error("Failed to parse tabs data", e);
+        }
+      }
+      return null;
+    },
+    div({ node, className, children, ...props }: any) {
+      return <div className={className} {...props}>{children}</div>;
+    },
+    code({ node, inline, className, children, ...props }: any) {
+      const match = /language-(\w+)/.exec(className || "");
+      if (match && match[1] === "mermaid") return <Mermaid chart={String(children).replace(/\n$/, "")} />;
+      const isBlock = !inline && (match || String(children).includes("\n"));
+      if (isBlock) {
+        const codeString = String(children).replace(/\n$/, "");
+        return (
+          <div className="code-block-wrapper">
+            <CopyButton text={codeString} />
+            <SyntaxHighlighter
+              style={oneLight}
+              language={match ? match[1] : "text"}
+              PreTag="div"
+              wrapLines={true}
+              wrapLongLines={true}
+              customStyle={{ margin: 0, padding: "20px", fontSize: "13px", background: "transparent" }}
+              {...props}
+            >
+              {codeString}
+            </SyntaxHighlighter>
+          </div>
+        );
+      }
+      
+      return (
+        <code style={{ background: "rgba(0,127,106,0.08)", padding: "2px 6px", borderRadius: 4, fontSize: 13, color: "#007F6A", fontFamily: "var(--font-mono)", fontWeight: 500 }} {...props}>{children}</code>
+      );
+    }
+  }), [lineToId, progress, toggleCheckbox, sectionId]);
 
   return (
     <div className="markdown-body">
       <style>{`
         .markdown-body {
           color: #2D2D2D;
-          font-size: 18px;
+          font-size: 16px;
           line-height: 1.7;
         }
-        .markdown-body h1 { font-size: clamp(36px, 4vw, 48px); font-weight: 600; letter-spacing: -0.04em; margin-bottom: 24px; line-height: 1.25; color: #1B1B1B; }
-        .markdown-body h2 { font-size: 32px; font-weight: 700; margin-bottom: 16px; margin-top: 48px; letter-spacing: -0.03em; color: #1B1B1B; scroll-margin-top: 100px; line-height: 1.3; }
-        .markdown-body h3 { font-size: 24px; font-weight: 600; margin-bottom: 12px; margin-top: 32px; color: #1B1B1B; letter-spacing: -0.02em; scroll-margin-top: 100px; }
+        .markdown-body h1 { font-size: clamp(28px, 4vw, 36px); font-weight: 600; letter-spacing: -0.04em; margin-bottom: 24px; line-height: 1.25; color: #1B1B1B; }
+        .markdown-body h2 { font-size: 24px; font-weight: 700; margin-bottom: 16px; margin-top: 48px; letter-spacing: -0.03em; color: #1B1B1B; scroll-margin-top: 100px; line-height: 1.3; }
+        .markdown-body h3 { font-size: 20px; font-weight: 600; margin-bottom: 12px; margin-top: 32px; color: #1B1B1B; letter-spacing: -0.02em; scroll-margin-top: 100px; }
         .markdown-body p { margin-bottom: 20px; }
         .markdown-body a { color: #007F6A; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
         .markdown-body ul { list-style-type: disc; padding-left: 24px; margin-bottom: 20px; }
@@ -289,237 +529,7 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}
-        components={{
-          h2({ children, ...props }: any) {
-            let text = "";
-            React.Children.forEach(children, (child: any) => { if (typeof child === "string") text += child; });
-            const stepMatch = text.match(/^(?:(?:Step|Stage)\s+)?(\d+)(?:\s*[—:\-\.]\s+)(.*)$/i);
-            let generatedId = text.toLowerCase().replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
-            
-            if (idCounts[generatedId] !== undefined) {
-              idCounts[generatedId]++;
-              generatedId = `${generatedId}-${idCounts[generatedId]}`;
-            } else {
-              idCounts[generatedId] = 0;
-            }
-
-            if (stepMatch) {
-              return (
-                <h2 id={generatedId} className="step-heading" style={{ scrollMarginTop: "100px" }} {...props}>
-                  <span className="step-number">{stepMatch[1]}</span>
-                  {stepMatch[2]}
-                </h2>
-              );
-            }
-            return <h2 id={generatedId} style={{ scrollMarginTop: "100px" }} {...props}>{children}</h2>;
-          },
-          h3({ children, ...props }: any) {
-            let text = "";
-            React.Children.forEach(children, (child: any) => { if (typeof child === "string") text += child; });
-            const stepMatch = text.match(/^(?:(?:Step|Stage)\s+)?(\d+)(?:\s*[—:\-\.]\s+)(.*)$/i);
-            let generatedId = text.toLowerCase().replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
-            
-            if (idCounts[generatedId] !== undefined) {
-              idCounts[generatedId]++;
-              generatedId = `${generatedId}-${idCounts[generatedId]}`;
-            } else {
-              idCounts[generatedId] = 0;
-            }
-
-            if (stepMatch) {
-              return (
-                <h3 id={generatedId} className="step-heading" style={{ scrollMarginTop: "100px" }} {...props}>
-                  <span className="step-number">{stepMatch[1]}</span>
-                  {stepMatch[2]}
-                </h3>
-              );
-            }
-            return <h3 id={generatedId} style={{ scrollMarginTop: "100px" }} {...props}>{children}</h3>;
-          },
-          p({ children }: any) {
-            const childrenArray = React.Children.toArray(children);
-            const containsCheckbox = childrenArray.some(
-              (child) => typeof child === "string" && /\[[ x]\]/.test(child)
-            );
-
-            if (!containsCheckbox) return <p>{children}</p>;
-
-            const prefix: React.ReactNode[] = [];
-            const items: { content: React.ReactNode[] }[] = [];
-            let currentItem: React.ReactNode[] | null = null;
-
-            childrenArray.forEach((child: any) => {
-              if (typeof child === "string") {
-                const parts = child.split(/(\[[ x]\])/g);
-                parts.forEach((part: string) => {
-                  if (part === "[ ]" || part === "[x]") {
-                    currentItem = [];
-                    items.push({ content: currentItem });
-                  } else if (currentItem) {
-                    currentItem.push(part);
-                  } else if (part) {
-                    prefix.push(part);
-                  }
-                });
-              } else {
-                if (currentItem) currentItem.push(child);
-                else prefix.push(child);
-              }
-            });
-
-            return (
-              <div style={{ marginBottom: 20 }}>
-                {prefix.length > 0 && <p style={{ marginBottom: 12 }}>{prefix}</p>}
-                {items.map((item: any, idx: number) => {
-                  let contentText = "";
-                  item.content.forEach((c: any) => { if (typeof c === "string") contentText += c; });
-                  if (!contentText.trim() && item.content.length === 0) return null;
-
-                  const cbId = `${sectionId}:${contentText.trim().slice(0, 50).replace(/\s+/g, '-')}`;
-                  const isChecked = progress[cbId] || false;
-
-                  return (
-                    <div 
-                      key={`cb-${idx}`} 
-                      className={`checkbox-row ${isChecked ? 'checked' : ''}`}
-                      onClick={() => toggleCheckbox(cbId)}
-                    >
-                      <div className="checkbox-box">
-                        {isChecked && (
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        )}
-                      </div>
-                      <div className="checkbox-text" style={{ flex: 1 }}>{item.content}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          },
-          blockquote({ children }: any) {
-            const childrenArray = React.Children.toArray(children);
-            
-            // 1. Recursive text extraction to find the marker anywhere
-            let allText = "";
-            const walk = (node: any) => {
-              if (typeof node === 'string') allText += node;
-              else if (node?.props?.children) {
-                React.Children.forEach(node.props.children, walk);
-              }
-            };
-            childrenArray.forEach(walk);
-
-            const markerRegex = /\[(WARNING|TIP|LIGHTBULB|INFO|NOTE|CAUTION|DANGER|STOP)\]/i;
-            const match = allText.match(markerRegex);
-            
-            if (match) {
-              const markerText = match[0];
-              const typeStr = match[1].toUpperCase();
-              let type: 'warning' | 'tip' | 'info' | 'caution' = 'info';
-              
-              if (typeStr === 'WARNING') type = 'warning';
-              else if (typeStr === 'TIP' || typeStr === 'LIGHTBULB') type = 'tip';
-              else if (typeStr === 'CAUTION' || typeStr === 'DANGER' || typeStr === 'STOP') type = 'caution';
-
-              const icons = {
-                warning: <AlertTriangle size={16} />,
-                tip: <Lightbulb size={16} />,
-                info: <Info size={16} />,
-                caution: <AlertOctagon size={16} />
-              };
-              const colors = {
-                warning: '#B25E00',
-                tip: '#007F6A',
-                info: '#0056B3',
-                caution: '#B91C1C'
-              };
-
-              // 2. Recursive cleaning to remove the marker text
-              let markerRemoved = false;
-              const clean = (node: any): any => {
-                if (typeof node === 'string') {
-                  if (!markerRemoved && node.toUpperCase().includes(markerText.toUpperCase())) {
-                    markerRemoved = true;
-                    return node.replace(new RegExp(`\\s*\\${markerText}\\s*`, 'i'), "").trim();
-                  }
-                  return node;
-                }
-                if (node && node.props && node.props.children) {
-                  return React.cloneElement(node, {
-                    children: React.Children.map(node.props.children, clean)
-                  });
-                }
-                return node;
-              };
-
-              const cleanedChildren = React.Children.map(children, clean);
-
-              return (
-                <blockquote className={type} style={{ display: "flex", gap: "16px", alignItems: "flex-start", padding: "16px 20px" }}>
-                  <div style={{ color: colors[type], marginTop: "4px", flexShrink: 0 }}>
-                    {icons[type]}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    {cleanedChildren}
-                  </div>
-                </blockquote>
-              );
-            }
-
-            return <blockquote>{children}</blockquote>;
-          },
-          table({ children, ...props }: any) {
-            return (
-              <div style={{ margin: "28px 0", borderRadius: 12, overflow: "hidden", border: "1px solid rgba(0,0,0,0.08)", width: "100%", overflowX: "auto" }}>
-                <table {...props}>{children}</table>
-              </div>
-            );
-          },
-          // Custom handler for our terminal-tabs tag
-          'terminal-tabs': (props: any) => {
-            const tabsData = props["data-tabs"];
-            if (tabsData) {
-              try {
-                const tabs = JSON.parse(tabsData.replace(/&apos;/g, "'"));
-                return <TerminalTabs tabs={tabs} />;
-              } catch (e) {
-                console.error("Failed to parse tabs data", e);
-              }
-            }
-            return null;
-          },
-          div({ node, className, children, ...props }: any) {
-            return <div className={className} {...props}>{children}</div>;
-          },
-          code({ node, inline, className, children, ...props }: any) {
-            const match = /language-(\w+)/.exec(className || "");
-            if (match && match[1] === "mermaid") return <Mermaid chart={String(children).replace(/\n$/, "")} />;
-            const isBlock = !inline && (match || String(children).includes("\n"));
-            if (isBlock) {
-              const codeString = String(children).replace(/\n$/, "");
-              return (
-                <div className="code-block-wrapper">
-                  <CopyButton text={codeString} />
-                  <SyntaxHighlighter
-                    style={oneLight}
-                    language={match ? match[1] : "text"}
-                    PreTag="div"
-                    wrapLines={true}
-                    wrapLongLines={true}
-                    customStyle={{ margin: 0, padding: "20px", fontSize: "13px", background: "transparent" }}
-                    {...props}
-                  >
-                    {codeString}
-                  </SyntaxHighlighter>
-                </div>
-              );
-            }
-            
-            return (
-              <code style={{ background: "rgba(0,127,106,0.08)", padding: "2px 6px", borderRadius: 4, fontSize: 13, color: "#007F6A", fontFamily: "var(--font-mono)", fontWeight: 500 }} {...props}>{children}</code>
-            );
-          }
-        } as any}
+        components={memoizedComponents as any}
       >
         {processedContent}
       </ReactMarkdown>

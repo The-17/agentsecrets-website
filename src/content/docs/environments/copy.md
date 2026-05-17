@@ -1,26 +1,81 @@
 # Copying an Environment
-Detailed explanation of how to copy the keys of an environment to another environment.
+
+## The copy command
+
+```bash
+agentsecrets environment copy <source> <destination>
+```
+
+Copy duplicates all secrets from one environment into another. Unlike `merge`, copy transfers both key names and values exactly as they exist in the source environment.
+
+---
 
 
-## When to copy an environment
+## When to use copy
 
-Copy is useful when a new environment should start as a clone of an existing one — same keys, same values. The most common case is setting up staging to mirror development when you are first configuring a project. It is also useful for creating production secrets from an existing environment.
+Copy is useful when a destination environment should begin as an exact clone of another environment.
+
+Common use cases:
+- creating staging from development
+- bootstrapping production from staging
+- resetting a test environment
+- synchronizing environments during early project setup
+
+Example:
+
+```text
+development → staging
+```
+
+Both environments end up containing the same keys and values.
 
 
-## Running the copy
+## Running a copy
 
 ```bash
 agentsecrets environment copy development staging
 ```
 
-This will copy all the keys from the development environment to the staging environment. If any keys already exist in the staging environment, tyou are prompted to confirm before overwriting:
+This will copy all the keys from the development environment to the staging environment. If any keys already exist in the staging environment, you are prompted to confirm before overwriting:
 
 ```
 This will overwrite 8 existing secrets in staging. Continue? (y/n):
 ```
 
-## What is and is not copied
+Typing `y` proceeds with the copy. Anything else cancels the operation.
 
-Copy transfers all key names and their encrypted values from the source environment to the destination. The domain allowlist is not copied, it is workspace-scoped and applies to all environments. Environment-specific configuration in project.json is not affected.
+---
 
+## What is copied
+- Key names
+- Encrypted values
+
+
+### What is NOT copied:
+- Domain allowlist (workspace-scoped)
+- project configuration
+- environment selection state
+- `.agentsecrets/project.json`
+- global CLI configuration
+
+Only environment-scoped secrets are transferred.
+
+## Overwrite behavior
+
+If a key already exists in the destination environment, the copied value replaces it.
+
+Example:
+
+```text
+development → STRIPE_KEY=sk_test_abc
+staging     → STRIPE_KEY=old_value
+```
+
+After copy:
+
+```text
+staging → STRIPE_KEY=sk_test_abc
+```
+
+This operation affects all matching keys automatically.
 

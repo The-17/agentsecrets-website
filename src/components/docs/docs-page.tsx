@@ -104,7 +104,7 @@ function SidebarContent({ active, groups, onJump }: { active: string; groups: st
                           width: "100%",
                           padding: "8px 4px",
                           borderRadius: 8,
-                          fontSize: 13,
+                          fontSize: 14,
                           color: isActive ? "#1B1B1B" : "#666666",
                           background: isActive ? "rgba(0,255,135,0.08)" : "transparent",
                           border: `1px solid ${isActive ? "rgba(0,127,106,0.1)" : "transparent"}`,
@@ -168,7 +168,7 @@ function SidebarContent({ active, groups, onJump }: { active: string; groups: st
                                     width: "100%",
                                     padding: "6px 4px",
                                     borderRadius: 8,
-                                    fontSize: 12,
+                                    fontSize: 13,
                                     color: isChildActive ? "#1B1B1B" : "#888888",
                                     background: isChildActive ? "rgba(0,255,135,0.05)" : "transparent",
                                     border: `1px solid ${isChildActive ? "rgba(0,127,106,0.1)" : "transparent"}`,
@@ -347,6 +347,10 @@ export default function DocsPage() {
   // 5. Table of Contents & ScrollSpy
   const [toc, setToc] = useState<{id: string, title: string, level: number}[]>([]);
   const [activeHeading, setActiveHeading] = useState("");
+  const activeHeadingRef = useRef(activeHeading);
+  useEffect(() => {
+    activeHeadingRef.current = activeHeading;
+  }, [activeHeading]);
 
   useEffect(() => {
     if (!content) {
@@ -431,7 +435,7 @@ export default function DocsPage() {
         }
       });
       
-      if (currentId && currentId !== activeHeading) {
+      if (currentId && currentId !== activeHeadingRef.current) {
         setActiveHeading(currentId);
       }
     };
@@ -441,7 +445,7 @@ export default function DocsPage() {
     handleScroll();
 
     return () => mainContainer.removeEventListener("scroll", handleScroll);
-  }, [content, active, isLoading, activeHeading]);
+  }, [content, active, isLoading]);
 
   // Sync TOC scroll with active heading
   useEffect(() => {
@@ -592,7 +596,7 @@ export default function DocsPage() {
       {/* Main Layout Grid */}
       <div className="docs-layout grid grid-cols-1" style={{ minHeight: "100vh" }}>
         <div className="hidden lg:block" />
-        <main ref={contentRef} className="docs-content" style={{ padding: "100px 64px 120px 64px", width: "100%", height: "calc(100vh - 60px)", marginTop: 60, overflowY: "auto", display: "flex", flexDirection: "column", alignItems: "center" }}>
+        <main ref={contentRef} className="docs-content" style={{ padding: "100px 64px 120px 64px", width: "100%", height: "calc(100vh - 60px)", marginTop: 60, overflowY: "auto", scrollBehavior: "smooth", display: "flex", flexDirection: "column", alignItems: "center" }}>
           <div style={{ width: "100%", maxWidth: "680px" }}>
             <div key={active} className="docs-section animate-in fade-in slide-in-from-bottom-4 duration-500">
               <Breadcrumb items={[DOCS_SECTIONS.find(s => s.id === active)?.group || "Docs", activeLabel]} />

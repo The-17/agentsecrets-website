@@ -1,11 +1,25 @@
 # agentsecrets secrets: Manage your credentials
 
-Secrets are named credentials stored in your OS keychain, scoped to a project and environment. This page covers the day-to-day operations: setting, listing, and deleting secrets.
-
-
 The `agentsecrets secrets` commands let you store, retrieve, sync, and audit credentials for your active project. Every value is encrypted client-side with AES-256-GCM before it leaves your machine. The server only stores ciphertext it structurally cannot decrypt. Your agents reference key names; they never hold the values.
 
 ---
+
+## Secret workflow
+
+Most workflows follow the same lifecycle:
+
+1. Set a secret
+2. The value is encrypted locally
+3. The encrypted blob syncs to the cloud
+4. The proxy resolves the value at runtime
+5. Agents reference the key name, not the value
+
+Secrets are always scoped to:
+- a project
+- an environment
+- a key name
+
+The same key name can exist with different values across `development`, `staging`, and `production`.
 
 ## Setting a secret
 Store or update one or more secrets use the `secrets set` command. Values are encrypted locally before being sent to the cloud.
@@ -30,10 +44,10 @@ agentsecrets secrets set ANALYTICS_KEY=value --all-envs
 
 This prompts for confirmation before writing to all three environments.
 
-### What happens
-1. Reads the workspace key from `~/.agentsecrets/config.json`.
-2. Encrypts each value: `ciphertext = AES-GCM(workspace_key, nonce, value)`.
-3. Sends `{ key, ciphertext+nonce }` to the API, the server stores the blob only.
+### What happens internally
+1. The CLI reads your workspace encryption key from `~/.agentsecrets/config.json`.
+2. Encrypts each value locally using `AES-256-GCM`.
+3. Sends the encrypted blob to the AgentSecrets API, the server stores the blob only.
 4. If your storage mode is Keychain, also writes the value to your OS keychain.
 
 
@@ -80,14 +94,18 @@ Showing cached keys. Use --remote for latest from cloud.
 agentsecrets secrets delete KEY_NAME
 ```
 
-Removes the secret from the the cloud and your os keychain in the active environment only. This is permanent. To delete from all environments, switch and delete for each
+Deletes a secret from the active environment. The CLI removes the key from:
+- the remote API
+- your OS keychain (Keychain mode)
+- your `.env` file (Standard mode)
+
+When your active environment is `production`, you are prompted to confirm before the deletion proceeds.
 
 ### Usage
 ```bash 
 agentsecrets secrets delete KEY
 ```
 
-The CLI deletes the key from the remote API, your OS keychain (Keychain mode), and your .env file (Standard mode). When your active environment is production, you are prompted to confirm before the deletion proceeds.
 
 > [NOTE]
 > This is permanent. To delete from all environments, switch and delete for each:
@@ -118,4 +136,17 @@ Keep names consistent across environments. If `STRIPE_KEY` is the name in develo
 Use names that identify the service. `API_KEY` is ambiguous when you have ten secrets. `STRIPE_LIVE_KEY` is not.
 
 Do not encode the environment in the key name. You do not need `STRIPE_KEY_PRODUCTION`, the active environment context already scopes which value is resolved.
+
+
+## Full Command Reference
+
+```bash
+agentsecrets secrets set [KEY=value ...] [--all-envs]
+agentsecrets secrets list [--remote]
+agentsecrets secrets delete KEY [--all-envs]
+agentsecrets secrets pull
+agentsecrets secrets push
+agentsecrets secrets diff
+
+```
 
