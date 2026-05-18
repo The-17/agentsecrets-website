@@ -60,6 +60,7 @@ Typing `y` proceeds with the copy. Anything else cancels the operation.
 
 Only environment-scoped secrets are transferred.
 
+
 ## Overwrite behavior
 
 If a key already exists in the destination environment, the copied value replaces it.
@@ -79,3 +80,25 @@ staging → STRIPE_KEY=sk_test_abc
 
 This operation affects all matching keys automatically.
 
+
+## Copy vs merge
+
+Use `copy` when the destination should become an exact duplicate.
+Use `merge` when the destination should keep its own environment-specific values.
+
+Typical guidance:
+| Command | Behavior |
+| --- | --- |
+| `copy` | Same keys, same values |
+| `merge` | Same keys, different values |
+
+
+## Typical setup workflow
+
+```bash
+agentsecrets environment copy development staging
+agentsecrets environment switch staging
+agentsecrets secrets pull
+```
+
+This creates a staging environment identical to development as a starting point.
