@@ -159,8 +159,8 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
 
       if (tabs.length === 0) return `:::tabs${inner}:::`;
       
-      // Use a custom tag that rehype-raw will pass through
-      return `\n<terminal-tabs data-tabs='${JSON.stringify(tabs).replace(/'/g, "&apos;")}'></terminal-tabs>\n`;
+      // Use a block-level div wrapper so that rehype-raw will treat it as a block element and prevent <p> nesting.
+      return `\n\n<div class="terminal-tabs-container" data-tabs='${JSON.stringify(tabs).replace(/'/g, "&apos;")}'></div>\n\n`;
     });
 
     // 2. Process :::step blocks SECOND
@@ -394,6 +394,15 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
       return null;
     },
     div({ node, className, children, ...props }: any) {
+      if (className === "terminal-tabs-container" && props["data-tabs"]) {
+        const tabsData = props["data-tabs"];
+        try {
+          const tabs = JSON.parse(tabsData.replace(/&apos;/g, "'"));
+          return <TerminalTabs tabs={tabs} />;
+        } catch (e) {
+          console.error("Failed to parse tabs data", e);
+        }
+      }
       return <div className={className} {...props}>{children}</div>;
     },
     code({ node, inline, className, children, ...props }: any) {

@@ -31,10 +31,21 @@ export const metadata: Metadata = {
   },
 };
 
+import Nav from "@/components/nav";
+import DocsLayoutWrapper from "@/components/docs/docs-layout-wrapper";
+
 export default function DocsLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return children;
+  return (
+    <>
+      <div className="grid-bg" style={{ position: "absolute", inset: 0, zIndex: 0, pointerEvents: "none" }} />
+      <Nav page="docs" />
+      <DocsLayoutWrapper>
+        {children}
+      </DocsLayoutWrapper>
+    </>
+  );
 }

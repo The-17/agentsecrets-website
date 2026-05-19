@@ -113,6 +113,18 @@ export const DOCS_SECTIONS = [
   { id: "sdk/javascript", group: "SDK", label: "JavaScript SDK (Soon)" },
   { id: "sdk/zero-knowledge-mcp", group: "SDK", label: "ZK MCP Server" },
 
+  // API & Backend
+  { id: "api/overview", group: "API & Backend", label: "API & Backend Overview" },
+  { id: "api/architecture", group: "API & Backend", label: "API Architecture", parent: "api/overview" },
+  { id: "api/authentication", group: "API & Backend", label: "Authentication", parent: "api/overview" },
+  { id: "api/workspaces", group: "API & Backend", label: "Workspaces & Teams", parent: "api/overview" },
+  { id: "api/projects", group: "API & Backend", label: "Projects", parent: "api/overview" },
+  { id: "api/environments", group: "API & Backend", label: "Environments", parent: "api/overview" },
+  { id: "api/secrets", group: "API & Backend", label: "Secrets & Sync", parent: "api/overview" },
+  { id: "api/agent-identity", group: "API & Backend", label: "Agent Identity", parent: "api/overview" },
+  { id: "api/audit", group: "API & Backend", label: "Audit Logs", parent: "api/overview" },
+  { id: "api/reference", group: "API & Backend", label: "API Reference", parent: "api/overview" },
+
   // Security
   { id: "security/overview", group: "Security", label: "Security Overview" },
   { id: "security/encryption", group: "Security", label: "Encryption Model" },
@@ -157,6 +169,8 @@ export const DOCS_SECTIONS = [
   { id: "faq", group: "FAQ", label: "Frequently Asked Questions" },
 
   // Changelog
+  { id: "changelog/v1-4-0", group: "Changelog", label: "v1.4.0" },
+  { id: "changelog/v1-3-0", group: "Changelog", label: "v1.3.x" },
   { id: "changelog/v1-2-0", group: "Changelog", label: "v1.2.0" },
   { id: "changelog/v1-1-x", group: "Changelog", label: "v1.1.x" },
   { id: "changelog/v1-0-x", group: "Changelog", label: "v1.0.x" },
