@@ -40,27 +40,34 @@ You do not need to move everything.
 
 ## Step-by-step migration for agent credentials
 
-**1. Identify which credentials your agents use**
+### 1. Identify which credentials your agents use
+:::step
 
 List the credentials your agents currently retrieve from Vault or AWS Secrets Manager to make API calls.
+:::
 
-**2. Store them in AgentSecrets**
+### 2. Store them in AgentSecrets
+:::step
 
 ```bash
 agentsecrets secrets set STRIPE_KEY=sk_live_...
 agentsecrets secrets set OPENAI_KEY=sk-proj-...
 agentsecrets secrets set GITHUB_TOKEN=ghp_...
 ```
+:::
 
-**3. Authorize the domains your agents call**
+### 3. Authorize the domains your agents call
+:::step
 
 ```bash
 agentsecrets workspace allowlist add api.stripe.com
 agentsecrets workspace allowlist add api.openai.com
 agentsecrets workspace allowlist add api.github.com
 ```
+:::
 
-**4. Update your agent code**
+### 4. Update your agent code
+:::step
 
 Before (retrieving from Vault):
 ```python
@@ -88,14 +95,17 @@ response = client.call(
     bearer="STRIPE_KEY"
 )
 ```
+:::
 
-**5. Start the proxy and test**
+### 5. Start the proxy and test
+:::step
 
 ```bash
 agentsecrets proxy start
 # Run your updated agent code and verify it works
 agentsecrets proxy logs --last 10
 ```
+:::
 
 ---
 

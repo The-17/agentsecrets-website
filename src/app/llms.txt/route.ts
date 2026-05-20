@@ -13,6 +13,10 @@ export async function GET() {
   output += `- **Transport Layer Injection**: Transparently intercepts SDK requests (like OpenAI or Stripe) to authenticate outbound queries.\n`;
   output += `- **Domain Allowlist**: Strict egress rules to prevent prompt injection credential theft.\n\n`;
   
+  output += `## Search the Documentation\n`;
+  output += `You can programmatically search this documentation by making a GET request to: \`${baseUrl}/api/search?q=<query>\`\n`;
+  output += `Calling this endpoint with an LLM crawler or requesting text format returns search results in a clean, navigationless markdown list of relevant articles, snippets, and deep links. Use this to quickly find specific guides, troubleshooting steps, or comparison details.\n\n`;
+
   output += `## Documentation Map\n\n`;
 
   DOCS_SECTIONS.forEach((s) => {
