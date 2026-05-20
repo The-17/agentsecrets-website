@@ -268,35 +268,41 @@ export default function SearchPill({ onMenuClick, onNavigate }: SearchPillProps)
                           {results.length} result{results.length !== 1 ? 's' : ''}
                         </h3>
                       </div>
-                      <div className='grid grid-cols-1 sm:grid-cols-2 gap-6'>
+                      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
                         {results.map((r, idx) => (
                           <motion.button
                             key={r.id}
                             initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: idx * 0.05 }}
+                            animate={{ opacity: 1, y: activeIdx === idx ? -8 : 0 }}
+                            transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
                             onClick={() => navigateTo(r.id, r.label, r.group)}
                             onMouseEnter={() => setActiveIdx(idx)}
-                            className={`p-6 rounded-[24px] text-left border flex flex-col gap-4 transition-all duration-300 ${
-                              activeIdx === idx 
-                                ? 'bg-white border-black/[0.08] shadow-[0_8px_24px_rgba(0,0,0,0.04)] translate-y-[-2px]' 
-                                : 'bg-white border-black/[0.03] shadow-sm'
-                            }`}
+                            className='text-left bg-white rounded-[24px] p-6 sm:p-8 flex flex-col gap-6 sm:gap-8 shadow-[0_2px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_32px_80px_rgba(0,0,0,0.08)] transition-all duration-500 cursor-pointer group border border-black/[0.03] h-full relative'
                           >
-                            <div className='flex items-center gap-3 mb-2'>
-                              <div className={`text-[#1B1B1B] transition-colors duration-300 ${activeIdx === idx ? 'text-[#0d9488]' : ''}`}>
-                                <FileText size={28} strokeWidth={1.5} />
-                              </div>
-                              <span className='text-[10px] font-bold tracking-widest uppercase text-[#1B1B1B]/40'>
+                            <div className='flex flex-col gap-3 flex-1'>
+                              <div className='inline-flex items-center self-start text-[9px] font-bold tracking-wide rounded-full px-2.5 py-1 bg-[#F5F5F7] text-black/60 group-hover:bg-[#0d94881a] group-hover:text-[#0d9488] transition-colors'>
                                 {r.group}
+                              </div>
+                              <h4 className='text-[20px] sm:text-[22px] font-semibold leading-[1.2] tracking-[-0.03em] w-full group-hover:text-[#0d9488] transition-colors duration-300'>
+                                {r.label}
+                              </h4>
+                              <p 
+                                className='text-[13px] sm:text-[14px] leading-[1.6] line-clamp-3 font-medium text-[#1B1B1B]/40 group-hover:text-[#0d9488] transition-colors duration-300'
+                                style={{ textWrap: 'pretty' } as any}
+                              >
+                                {r.snippet}
+                              </p>
+                            </div>
+
+                            <div className='mt-auto pt-4'>
+                              <span className={`flex items-center justify-center gap-2 text-[11px] sm:text-[12px] font-bold px-4 sm:px-6 py-2.5 rounded-[12px] border w-full transition-all duration-300 ${activeIdx === idx ? 'opacity-100 text-[#0d9488] border-[#0d9488]' : 'opacity-50 text-[#1B1B1B] border-black/10'}`}>
+                                Go to section
+                                <ChevronRight 
+                                  size={14} 
+                                  className={`transition-transform duration-300 ${activeIdx === idx ? 'translate-x-0.5' : ''}`} 
+                                />
                               </span>
                             </div>
-                            <h4 className={`text-[16px] font-semibold leading-tight transition-colors duration-200 ${activeIdx === idx ? 'text-[#0d9488]' : 'text-[#1B1B1B]'}`}>
-                              {splitToTwoLines(r.label)}
-                            </h4>
-                            <p className='text-[12px] text-[#1B1B1B]/60 leading-relaxed line-clamp-2 font-medium'>
-                              {r.snippet}
-                            </p>
                           </motion.button>
                         ))}
                       </div>
