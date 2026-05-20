@@ -20,4 +20,5 @@ The proxy requires network access to route the requests to external APIs (like S
 
 ## Summary
 
-Use AgentSecrets to protect AI Agents from prompt-injected credential theft. For traditional infrastructure provisioning or dynamic secret generation, stick to enterprise tools like Vault.
+Choose the tool that fits your execution model. If your environment requires dynamic credentials (e.g. cloud IAM generation) or IaC state provisioning, you can integrate those systems upstream while using AgentSecrets locally or at process boundaries to secure runtime credentials and prevent process memory exposure.
+

@@ -1,125 +1,86 @@
-# Migrating from HashiCorp Vault / AWS Secrets Manager
+# Migrating from dotenv-vault
 
-Vault and AWS Secrets Manager are good tools for application secrets management. If you are already using one of them, AgentSecrets is not a replacement for your entire secrets infrastructure. It is purpose-built for the specific problem of AI agent credential access. This guide explains the difference and how to run both alongside each other.
+`dotenv-vault` is a tool for sharing encrypted `.env` files across a team. While it simplifies dotenv management, it still relies on loading plaintext credentials directly into process environment variables (`process.env` or `os.environ`), exposing them to security risks in development and AI-assisted workflows.
+
+This guide walks you through migrating from `dotenv-vault` to AgentSecrets, achieving a zero-knowledge setup where secrets are secured in your local OS Keychain and injected only when and where they are needed.
 
 ---
 
-## Key differences in the model
+## Architectural Comparison
 
-Vault and AWS Secrets Manager follow the retrieve-and-use model: your application requests a credential value at runtime, receives it, and uses it. This works well when your application is trusted code doing predictable things.
-
-The retrieve-and-use model breaks down when the "application" is an AI agent:
-
-| | Vault / AWS Secrets Manager | AgentSecrets |
+| Feature | dotenv-vault | AgentSecrets |
 |---|---|---|
-| How the credential is used | Retrieved as a value, passed to the API call | Key name passed to proxy, value injected at transport layer |
-| Value in agent memory | Yes — after retrieval | Never |
-| Prompt injection risk | Present — agent holds the value | Eliminated — agent never receives it |
-| Audit log contains value | Possible in verbose/debug modes | Structurally impossible — no value field in schema |
-| Built for | Application code | AI agents |
-
-If your AI agent currently calls Vault or AWS Secrets Manager to retrieve credentials before making API calls, the retrieved value is in agent context. AgentSecrets eliminates that retrieval step.
+| **Storage Location** | Decrypted local `.env` files / Process memory | Secure OS Keychain (no plaintext files) |
+| **Team Synchronization** | Cloud-stored keys decrypting `.env.vault` | End-to-End Encrypted (E2E) zero-knowledge sync |
+| **Runtime Access** | Exposes all secrets to the process environment | Proxy transport-layer injection OR runtime execution spawning |
+| **Vulnerability to Code Inspection** | High (any tool can print `process.env` / `.env` files) | Eliminated (secrets never exist in the filesystem or target process memory) |
 
 ---
 
-## What to move and what to keep
+## Step-by-Step Migration
 
-You do not need to move everything.
-
-**Keep in Vault / AWS Secrets Manager:**
-- Application secrets used by non-agent code (database passwords, service account keys, infrastructure credentials)
-- Secrets consumed by CI/CD pipelines in non-agent workflows
-- Any credential your existing application code retrieves and uses directly
-
-**Move to AgentSecrets:**
-- API credentials that AI agents need to call external services (Stripe, OpenAI, GitHub, SendGrid, etc.)
-- Credentials used by MCP servers and AI tools
-- Any credential where you want a zero-knowledge guarantee at the agent layer
-
----
-
-## Step-by-step migration for agent credentials
-
-### 1. Identify which credentials your agents use
 :::step
+1. **Retrieve your decrypted credentials:**
+   Ensure you have your current decrypted secrets loaded locally. If you do not have a local `.env` file, run the decrypt command using the `dotenv-vault` CLI:
+   ```bash
+   npx dotenv-vault decrypt
+   ```
 
-List the credentials your agents currently retrieve from Vault or AWS Secrets Manager to make API calls.
-:::
+2. **Initialize your AgentSecrets workspace:**
+   Initialize a new project and workspace in your directory:
+   ```bash
+   agentsecrets init
+   ```
 
-### 2. Store them in AgentSecrets
-:::step
+3. **Import your secrets:**
+   Push your decrypted local `.env` file into AgentSecrets. This command automatically encrypts each credential value locally and stores it in your secure OS Keychain:
+   ```bash
+   agentsecrets secrets push
+   ```
+   Verify they have been imported correctly:
+   ```bash
+   agentsecrets secrets list
+   ```
 
-```bash
-agentsecrets secrets set STRIPE_KEY=sk_live_...
-agentsecrets secrets set OPENAI_KEY=sk-proj-...
-agentsecrets secrets set GITHUB_TOKEN=ghp_...
-```
-:::
+4. **Remove dotenv-vault files and keys:**
+   Clean up your repository by deleting the dotenv-vault configuration and encrypted keys. Run:
+   ```bash
+   rm .env.vault .env.project .env.keys .env
+   ```
+   Remove any `DOTENV_KEY` environment variables from your shell profile, system environment, or hosting provider configuration.
 
-### 3. Authorize the domains your agents call
-:::step
-
-```bash
-agentsecrets workspace allowlist add api.stripe.com
-agentsecrets workspace allowlist add api.openai.com
-agentsecrets workspace allowlist add api.github.com
-```
-:::
-
-### 4. Update your agent code
-:::step
-
-Before (retrieving from Vault):
-```python
-import hvac
-import requests
-
-vault_client = hvac.Client()
-secret = vault_client.secrets.kv.read_secret_version(path="stripe")
-stripe_key = secret["data"]["data"]["key"]
-
-response = requests.get(
-    "https://api.stripe.com/v1/balance",
-    headers={"Authorization": f"Bearer {stripe_key}"}
-)
-```
-
-After (using AgentSecrets):
-```python
-from agentsecrets import AgentSecrets
-
-client = AgentSecrets()
-
-response = client.call(
-    "https://api.stripe.com/v1/balance",
-    bearer="STRIPE_KEY"
-)
-```
-:::
-
-### 5. Start the proxy and test
-:::step
-
-```bash
-agentsecrets proxy start
-# Run your updated agent code and verify it works
-agentsecrets proxy logs --last 10
-```
+5. **Update your code integration:**
+   Remove the `dotenv-vault` setup from your application code:
+   
+   **Before (Node.js):**
+   ```javascript
+   require('dotenv-vault').config();
+   // Secrets are now exposed in process.env
+   ```
+   
+   **After (Zero-Knowledge CLI Environment Injection):**
+   Simply launch your app prefixing it with the AgentSecrets runtime execution command:
+   ```bash
+   agentsecrets env -- node app.js
+   ```
+   
+   **After (Zero-Knowledge Proxy Integration):**
+   Configure your application to query external APIs through the local proxy:
+   ```javascript
+   const response = await fetch('http://localhost:8765/proxy', {
+     headers: {
+       'X-AS-Target-URL': 'https://api.stripe.com/v1/balance',
+       'X-AS-Inject-Bearer': 'STRIPE_KEY'
+     }
+   });
+   ```
 :::
 
 ---
 
-## Running both in parallel during transition
+## Zero-Knowledge Advantages
 
-You do not need to migrate everything at once. Your application code can continue using Vault or AWS Secrets Manager while your agent code uses AgentSecrets:
-
-```python
-# Application code — still using Vault
-db_password = vault_client.get_secret("DATABASE_PASSWORD")
-
-# Agent code — using AgentSecrets
-agent_client = AgentSecrets()
-response = agent_client.call("https://api.stripe.com/v1/balance", bearer="STRIPE_KEY")
-```
-
-Both run in the same codebase without conflict. Migrate agent credentials to AgentSecrets incrementally as you update each agent's code.
+By completing this migration, you secure your developer environment:
+- **No Plaintext Leakage**: Plaintext credentials never reside on your local storage drive, preventing scanning or git-commit accidents.
+- **Role-Based Workspaces**: Securely manage multiple environment scopes (development, staging, production) from a single CLI without shuffling `.env` files.
+- **Complete Audit Trail**: Every access attempt and API call is cryptographically audited, giving your team full visibility into where and how secrets are utilized.

@@ -1,6 +1,6 @@
 # Migrating from HashiCorp Vault / AWS Secrets Manager
 
-Vault and AWS Secrets Manager are good tools for application secrets management. If you are already using one of them, AgentSecrets is not a replacement for your entire secrets infrastructure. It is purpose-built for the specific problem of AI agent credential access. This guide explains the difference and how to run both alongside each other.
+This guide walks you through migrating credentials from HashiCorp Vault or AWS Secrets Manager to AgentSecrets. You can run both in parallel during transition or completely migrate your workflow to AgentSecrets to take advantage of zero-knowledge local encryption and runtime boundary injection.
 
 ---
 
@@ -8,7 +8,7 @@ Vault and AWS Secrets Manager are good tools for application secrets management.
 
 Vault and AWS Secrets Manager follow the retrieve-and-use model: your application requests a credential value at runtime, receives it, and uses it. This works well when your application is trusted code doing predictable things.
 
-The retrieve-and-use model breaks down when the "application" is an AI agent:
+The retrieve-and-use model breaks down when the "application" is an AI agent or when developers want to eliminate plaintext secrets from process memory:
 
 | | Vault / AWS Secrets Manager | AgentSecrets |
 |---|---|---|
@@ -16,25 +16,22 @@ The retrieve-and-use model breaks down when the "application" is an AI agent:
 | Value in agent memory | Yes — after retrieval | Never |
 | Prompt injection risk | Present — agent holds the value | Eliminated — agent never receives it |
 | Audit log contains value | Possible in verbose/debug modes | Structurally impossible — no value field in schema |
-| Built for | Application code | AI agents |
+| Built for | Application code | AI agents & zero-knowledge dev environments |
 
 If your AI agent currently calls Vault or AWS Secrets Manager to retrieve credentials before making API calls, the retrieved value is in agent context. AgentSecrets eliminates that retrieval step.
 
 ---
 
-## What to move and what to keep
+## Transition strategies
 
-You do not need to move everything.
+You can choose the level of migration that matches your infrastructure needs:
 
-**Keep in Vault / AWS Secrets Manager:**
-- Application secrets used by non-agent code (database passwords, service account keys, infrastructure credentials)
-- Secrets consumed by CI/CD pipelines in non-agent workflows
-- Any credential your existing application code retrieves and uses directly
+### Option A: Complete Migration
+Move all application and agent secrets to AgentSecrets, utilizing the local OS Keychain for storage and `--storage-mode` flags to manage execution environments. This completely eliminates plaintext secrets in config files or environment variables on developer machines.
 
-**Move to AgentSecrets:**
-- API credentials that AI agents need to call external services (Stripe, OpenAI, GitHub, SendGrid, etc.)
-- Credentials used by MCP servers and AI tools
-- Any credential where you want a zero-knowledge guarantee at the agent layer
+### Option B: Parallel Run
+Keep infrastructure credentials (like database passwords) in your existing manager while routing external API credentials (such as Stripe, OpenAI, or GitHub keys) through AgentSecrets to protect executing processes and AI agents from credential leakage.
+
 
 ---
 

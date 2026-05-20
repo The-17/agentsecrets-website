@@ -12,13 +12,8 @@ For a standard React or Express app, environment injection is perfect. But for a
 
 If you use Infisical to inject an OpenAI key and a Stripe key into a LangChain agent, those keys are physically present in `os.environ`. If the agent processes malicious user input that instructs it to `import os; print(os.environ)`, your keys are exposed.
 
-## The AgentSecrets Solution
+## Summary of Architectural Differences
 
-AgentSecrets does not inject secrets into the process environment. 
+- **Decryption point:** Infisical decrypts secrets on the server/client during pull/inject actions, whereas AgentSecrets utilizes local OS Keychain decryption keys that never leave the host system.
+- **In-Memory Exposure:** Infisical relies on injecting plaintext values into the environment block of executing commands. AgentSecrets supports both environment injection and runtime transport-layer injection, allowing processes (like AI agents) to query external services without exposing sensitive credentials to the process memory.
 
-Instead, it runs a local transport proxy. The agent passes a reference (e.g., `STRIPE_KEY`) to the proxy, and the proxy injects the real value into the HTTP headers *after* the request leaves the Python/Node process.
-
-The agent's `os.environ` remains completely empty of sensitive credentials.
-
-> [NOTE]
-> AgentSecrets is strictly purpose-built for the AI agent use case. If you are not building AI agents or LLM-connected tools, Infisical is an excellent general-purpose secrets manager.
