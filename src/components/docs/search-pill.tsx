@@ -390,7 +390,7 @@ export default function SearchPill({ onMenuClick, onNavigate }: SearchPillProps)
                             {group.category}
                           </h3>
                           
-                          <div className={`grid grid-cols-1 ${isGettingStarted ? 'lg:grid-cols-3 gap-4 lg:-mx-12' : 'sm:grid-cols-2 gap-6'}`}>
+                          <div className={`grid grid-cols-1 ${isGettingStarted ? 'lg:grid-cols-3 gap-4 lg:-mx-12' : 'sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:-mx-8'}`}>
                             {group.items.map((id) => {
                               const meta = resolveSectionMeta(id);
                               if (!meta) return null;
@@ -455,35 +455,36 @@ export default function SearchPill({ onMenuClick, onNavigate }: SearchPillProps)
                                   onMouseEnter={() => setHoveredItemId(`suggested-${id}`)}
                                   onMouseLeave={() => setHoveredItemId(null)}
                                   animate={{
-                                    y: isHovered ? -4 : 0,
-                                    opacity: hoveredItemId !== null && !isHovered ? 0.8 : 1
+                                    y: isHovered ? -2 : 0,
+                                    opacity: hoveredItemId !== null && !isHovered ? 0.9 : 1
                                   }}
-                                  transition={{ duration: 0.3, ease: "easeOut" }}
-                                  className='text-left bg-white rounded-[24px] p-6 flex flex-col gap-5 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_48px_rgba(0,0,0,0.08)] transition-all duration-300 cursor-pointer group border border-black/[0.04] h-full'
+                                  transition={{ duration: 0.2, ease: "easeOut" }}
+                                  className='text-left bg-white rounded-[24px] p-6 flex flex-col gap-4 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.04)] transition-shadow duration-300 cursor-pointer group border border-black/[0.04] h-full'
                                 >
-                                  {/* Top Row: Icon + Arrow */}
-                                  <div className='flex items-center justify-between w-full'>
-                                    <div className='flex items-center justify-center w-10 h-10 rounded-xl bg-[#F5F5F7] group-hover:bg-[#0d94881a] transition-colors'>
-                                      <FileText size={18} className='text-[#1B1B1B]/40 group-hover:text-[#0d9488] transition-colors' />
-                                    </div>
-                                    <div className='flex items-center justify-center w-8 h-8 rounded-full bg-[#F5F5F7] group-hover:bg-[#0d94881a] transition-colors'>
-                                      <ArrowRight size={14} className='text-[#1B1B1B]/40 group-hover:text-[#0d9488] -rotate-45 group-hover:rotate-0 transition-transform duration-300' />
-                                    </div>
-                                  </div>
+                                  {/* Minimal Icon */}
+                                  <motion.div 
+                                    className='mb-2 text-[#1B1B1B]'
+                                    animate={{
+                                      color: isHovered ? '#0d9488' : '#1B1B1B'
+                                    }}
+                                    transition={{ duration: 0.2 }}
+                                  >
+                                    <FileText size={32} strokeWidth={1.5} />
+                                  </motion.div>
                                   
                                   {/* Title and Snippet */}
-                                  <div className='flex flex-col gap-2.5 flex-1'>
-                                    <h4 className='text-[18px] font-semibold text-[#1B1B1B] leading-[1.25] tracking-[-0.02em] group-hover:text-[#0d9488] transition-colors'>
+                                  <div className='flex flex-col gap-2 flex-1'>
+                                    <h4 className='text-[16px] font-semibold text-[#1B1B1B] leading-tight group-hover:text-[#0d9488] transition-colors duration-200'>
                                       {splitToTwoLines(meta.label)}
                                     </h4>
-                                    <p className='text-[13px] text-[#1B1B1B]/50 leading-relaxed line-clamp-3 font-medium'>
+                                    <p className='text-[12px] text-[#1B1B1B]/60 leading-relaxed line-clamp-3 font-medium'>
                                       {meta.snippet}
                                     </p>
                                   </div>
 
                                   {/* Learn More Pill */}
-                                  <div className='mt-2 pt-1 w-full'>
-                                    <div className='w-full rounded-full bg-[#F5F5F7] py-[10px] text-center text-[12px] font-bold text-[#1B1B1B]/60 group-hover:bg-[#0d9488] group-hover:text-white transition-colors duration-300'>
+                                  <div className='mt-2 w-full'>
+                                    <div className='w-full rounded-full bg-[#F5F5F7] py-2 text-center text-[11px] font-semibold text-[#1B1B1B]/70 group-hover:bg-[#0d9488] group-hover:text-white transition-colors duration-200'>
                                       Learn more
                                     </div>
                                   </div>
