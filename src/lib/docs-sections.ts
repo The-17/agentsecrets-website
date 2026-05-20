@@ -149,6 +149,7 @@ export const DOCS_SECTIONS = [
   { id: "guides/rotate-credential", group: "Guides", label: "Rotating Credentials" },
   { id: "guides/audit-team", group: "Guides", label: "Auditing Team Activity" },
   { id: "guides/dev-to-production", group: "Guides", label: "Dev to Production" },
+  { id: "guides/kubernetes", group: "Guides", label: "Kubernetes Deployment" },
   { id: "guides/monorepo", group: "Guides", label: "Monorepo Setup" },
 
   // Comparisons
