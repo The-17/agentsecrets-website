@@ -93,6 +93,7 @@ export default function ModelSection() {
         </div>
 
       </div>
+      </div>
     </section>
   );
 }
