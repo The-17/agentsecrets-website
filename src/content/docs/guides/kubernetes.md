@@ -1,111 +1,24 @@
-# Kubernetes Deployment
+# Kubernetes Deployment (Coming Soon)
 
-This guide covers how to deploy the AgentSecrets proxy daemon in a Kubernetes environment. 
+Currently, AgentSecrets is optimized for **local development environments** and relies on the native OS Keychain (macOS Keychain, Windows Credential Manager, Linux Secret Service) to securely materialize and inject credentials. 
 
-Because AgentSecrets acts as a local security boundary that intercepts transport-layer requests, the way you deploy it in Kubernetes depends on your architecture and isolation requirements.
+Because the AgentSecrets **Cloud Resolver** has not yet been released, the proxy cannot currently function outside of a local desktop environment. It cannot independently fetch encrypted secrets from cloud providers or synchronize them directly into a Kubernetes cluster.
 
-The two recommended deployment patterns are **Sidecar** and **DaemonSet**.
+## The Roadmap
 
----
+Support for production deployments is currently in active development. Once the Cloud Resolver is released, AgentSecrets will support two primary Kubernetes deployment models:
 
-## 1. The Sidecar Pattern (Recommended)
+### 1. The Sidecar Pattern
 :::step
-
-Deploying the AgentSecrets proxy as a sidecar container within the same Pod as your AI agent is the recommended approach. This provides the highest level of isolation and security.
-
-1. **Pod-Level Isolation**
-   Each AI agent gets its own dedicated proxy instance. If one agent is compromised, its proxy cannot be used to inject credentials belonging to another agent.
-
-2. **Localhost Routing**
-   The AI agent container routes its outbound traffic through `localhost:9090` (the proxy sidecar). Since the proxy is in the same network namespace, this traffic never leaves the Pod unencrypted.
-
-3. **IAM and Identity**
-   You can bind specific Kubernetes ServiceAccounts or IAM Roles for Service Accounts (IRSA) to the Pod, ensuring the proxy only has permission to resolve secrets authorized for that specific agent identity.
+The proxy will run as a sidecar container inside your AI Agent's Pod. It will intercept outbound `localhost` traffic, authenticate against the Kubernetes native Secrets API (or AWS/GCP Secret Manager) using the Pod's ServiceAccount, and inject the decrypted credentials directly into the transport layer.
 :::
 
-### Example Deployment
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: ai-agent-deployment
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: ai-agent
-  template:
-    metadata:
-      labels:
-        app: ai-agent
-    spec:
-      containers:
-      # The AI Agent Container
-      - name: ai-agent
-        image: my-registry/ai-agent:latest
-        env:
-        - name: HTTP_PROXY
-          value: "http://localhost:9090"
-        - name: HTTPS_PROXY
-          value: "http://localhost:9090"
-
-      # The AgentSecrets Proxy Sidecar
-      - name: agentsecrets-proxy
-        image: agentsecrets/proxy:latest
-        ports:
-        - containerPort: 9090
-        env:
-        # Bind proxy to all interfaces in the pod namespace
-        - name: AGENTSECRETS_HOST
-          value: "0.0.0.0"
-        - name: AGENTSECRETS_PORT
-          value: "9090"
-```
-
----
-
-## 2. The DaemonSet Pattern
+### 2. The DaemonSet Pattern
 :::step
-
-For large-scale, high-density clusters where running a sidecar per pod consumes too much overhead, you can deploy the AgentSecrets proxy as a DaemonSet.
-
-1. **Node-Level Injection**
-   A single proxy instance runs on every Kubernetes node. All agent pods on that node route their traffic through the node's local proxy instance.
-
-2. **Resource Efficiency**
-   This significantly reduces memory and CPU overhead in clusters running hundreds of micro-agents.
-
-3. **Security Tradeoffs**
-   Because the proxy is shared across the node, you must rely on Agent Identity tokens passed in the request headers (e.g., `X-Agent-Identity`) to ensure the proxy applies the correct domain allowlists and credential scopes for the calling pod.
+For high-density micro-agent architectures, the proxy will run as a node-level DaemonSet to reduce memory overhead, intercepting and injecting credentials based on the calling Pod's cryptographically signed Agent Identity token.
 :::
 
-### Configuration Notes
-
-When using a DaemonSet, your agent pods should route traffic to the node IP. You can expose this to the pods using the Kubernetes Downward API:
-
-```yaml
-env:
-- name: NODE_IP
-  valueFrom:
-    fieldRef:
-      fieldPath: status.hostIP
-- name: HTTP_PROXY
-  value: "http://$(NODE_IP):9090"
-```
-
 ---
 
-## Secret Resolution in Kubernetes
-
-AgentSecrets uses the OS Keychain by default on local machines. In a Kubernetes environment, the proxy resolves credentials from your cloud provider's native secret manager (e.g., AWS Secrets Manager, Google Secret Manager, HashiCorp Vault) or directly from native Kubernetes Secrets.
-
-If using native Kubernetes Secrets, you can mount them as files into the proxy container or allow the proxy to use the Kubernetes API to resolve them dynamically using its ServiceAccount permissions.
-
-```mermaid
-flowchart TD
-    A[Agent Pod] -->|Intercepted Request| B[AgentSecrets Proxy]
-    B -->|Resolves Key Name| C[(Kubernetes Secrets / AWS)]
-    C -->|Returns Value| B
-    B -->|Injects at Transport Layer| D[External API]
-```
+> [INFO]
+> If you are deploying your AI agents to production today, we recommend falling back to standard Infrastructure as Code (IaC) secret injection methods (e.g., HashiCorp Vault sidecars or AWS Secrets Manager env injection) until the AgentSecrets Cloud Resolver is generally available.
