@@ -1,8 +1,14 @@
 import { MetadataRoute } from "next";
 import { DOCS_SECTIONS } from "@/lib/docs-sections";
+import { headers } from "next/headers";
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://agentsecrets.theseventeen.co";
+export const dynamic = "force-dynamic";
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const headersList = await headers();
+  const host = headersList.get("host") || "agentsecrets.theseventeen.co";
+  const protocol = host.includes("localhost") || host.includes("127.0.0.1") ? "http" : "https";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${protocol}://${host}`;
 
   const staticRoutes = [
     {

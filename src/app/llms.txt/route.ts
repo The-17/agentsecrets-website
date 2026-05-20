@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { DOCS_SECTIONS } from "@/lib/docs-sections";
+import { headers } from "next/headers";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const baseUrl = "https://agentsecrets.theseventeen.co";
+  const headersList = await headers();
+  const host = headersList.get("host") || "agentsecrets.theseventeen.co";
+  const protocol = host.includes("localhost") || host.includes("127.0.0.1") ? "http" : "https";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${protocol}://${host}`;
   
   let output = `# AgentSecrets\n\n`;
   output += `AgentSecrets is zero-knowledge secrets management and credential infrastructure for the AI era.\n\n`;

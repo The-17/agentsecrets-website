@@ -42,7 +42,9 @@ export async function GET(request: NextRequest) {
   const acceptHeader = request.headers.get("accept") || "";
   const userAgent = request.headers.get("user-agent") || "";
   
-  // Detect if client is an LLM crawler or programmatic client
+  const host = request.headers.get("host") || "agentsecrets.theseventeen.co";
+  const protocol = host.includes("localhost") || host.includes("127.0.0.1") ? "http" : "https";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${protocol}://${host}`;
   const isLLM = /gptbot|gpt-bot|claude|anthropic|cohere|google-extended|commoncrawl|semrush|bot|crawler|agent/i.test(userAgent) || 
                 request.headers.get("x-is-llm") === "true";
 
@@ -79,7 +81,7 @@ export async function GET(request: NextRequest) {
     if (!seen.has(sectionId) || boostedScore > seen.get(sectionId).score) {
       seen.set(sectionId, {
         id: sectionId,
-        url: `https://agentsecrets.theseventeen.co/docs/${sectionId === "what-is-agentsecrets" ? "" : sectionId}`,
+        url: `${baseUrl}/docs/${sectionId === "what-is-agentsecrets" ? "" : sectionId}`,
         title: (r as any).title,
         group: (r as any).group,
         label: (r as any).title || (r as any).label,
