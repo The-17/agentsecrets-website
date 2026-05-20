@@ -34,12 +34,16 @@ The database stores the following fields for each secret:
 Secret syncing is done on-demand or through background integration triggers:
 
 ### Pushing Secrets
+:::step
 1. The local CLI reads the environment secrets and identifies changes (additions, deletions, updates).
 2. It encrypts all modified secrets.
 3. The CLI issues a `POST /api/secrets/` with a list of encrypted envelopes.
 4. The backend updates the database records and increments the version metadata.
+:::
 
 ### Pulling Secrets
+:::step
 1. The local CLI calls `GET /api/secrets/{project_id}/` (optionally specifying environment).
 2. The backend returns all encrypted envelopes.
 3. The CLI decrypts the envelopes locally using the stored Workspace Key and updates the local SQLite cache or project `.env` templates.
+:::

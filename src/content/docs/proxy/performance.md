@@ -12,9 +12,11 @@ The local proxy introduces a loopback network hop. Because this communication oc
 
 The total latency profile of a proxy request is divided into three components:
 
+:::step
 1. **Local Loopback Transit**: The application sends the request to the proxy (~0.2ms).
 2. **Secret Decryption**: The proxy resolves the reference name, fetches the cipher from the OS Keychain, and decrypts it. Because the decrypted keys are securely cached in the proxy daemon's RAM, this step takes **< 0.05ms** for cached keys, and **5ms to 15ms** for uncached keys requiring hardware Keychain/Secure Enclave decryptions.
 3. **Outbound Transit & TLS**: The proxy opens an outbound TLS connection to the remote API.
+:::
 
 ---
 

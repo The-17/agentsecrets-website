@@ -44,10 +44,12 @@ To fully secure your environment after offboarding a developer, you must perform
 When you run `agentsecrets workspace remove`, the CLI automatically rotates the underlying **Workspace Key** to prevent the revoked user from accessing future secrets or updates.
 
 Under the hood, the following zero-knowledge key re-encryption workflow occurs:
+:::step
 1. **New Key Generation**: Your CLI generates a brand-new workspace keypair.
 2. **Secret Re-encryption**: The CLI decrypts all existing secrets using the old workspace key and re-encrypts them using the new workspace key.
 3. **Envelope Recreation**: The CLI fetches the public keys of all *remaining* workspace members, encrypts the new workspace key for each of them, and uploads these new envelopes to the backend.
 4. **Revocation**: The backend deletes the old envelopes. The revoked user can no longer decrypt any new secret updates or fetch new workspace keys.
+:::
 
 ### 2. Credential value rotation (manual)
 Since the revoked developer may still have local copies of the active keys, you must rotate the actual values of all sensitive credentials (such as Stripe API keys, database passwords, or OpenAI tokens) that were present in the workspace.

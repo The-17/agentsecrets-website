@@ -6,6 +6,7 @@ With AgentSecrets, onboarding takes 30 seconds.
 
 ## The Onboarding Flow
 
+:::step
 1. **Invite them to the workspace:**
    ```bash
    agentsecrets workspace invite dev@yourcompany.com
@@ -16,6 +17,7 @@ With AgentSecrets, onboarding takes 30 seconds.
    agentsecrets login
    agentsecrets secrets pull
    ```
+:::
 
 That is it. Their local OS keychain is now populated with the encrypted values. They can start the proxy and run the application immediately. 
 

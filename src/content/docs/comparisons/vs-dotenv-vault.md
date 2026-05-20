@@ -13,9 +13,11 @@ For AI agents, this is extremely dangerous. Any secret loaded via `.env` is full
 AgentSecrets completely eliminates `.env` files for sensitive credentials.
 
 When you use AgentSecrets:
+:::step
 1. Secrets are stored in your OS Keychain (not a plaintext file).
 2. They are synced securely across your team using End-to-End Encryption.
 3. They are injected into API requests via a local proxy, meaning they **never enter process memory**.
+:::
 
 ### Migration
 

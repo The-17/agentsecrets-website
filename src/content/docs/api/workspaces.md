@@ -35,10 +35,12 @@ Inviting User                   API (secretsapi)                 Invited User
       │                                │                              │
 ```
 
+:::step
 1. **Public Key Retrieval**: The inviter's client calls `/api/users/{email}/public-key/` to fetch the invitee's public key.
 2. **Local Encryption**: The inviter's client decrypts the workspace key locally (requiring the inviter's password), and encrypts it using the invitee's public key.
 3. **Submission**: The encrypted workspace key envelope and role are sent to the backend.
 4. **Acceptance**: When the invitee accepts and logs in, their client retrieves the encrypted envelope, decrypts it using their private key, and stores the workspace key locally.
+:::
 
 ---
 

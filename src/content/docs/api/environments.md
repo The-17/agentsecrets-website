@@ -8,9 +8,11 @@ Secrets in AgentSecrets are always scoped to a specific **Environment** within a
 
 By default, every project supports three canonical environments:
 
+:::step
 1. **development** (`dev`): Used by local developer machines. This is typically the default environment context.
 2. **staging**: Used for pre-production testing or continuous integration pipelines.
 3. **production** (`prod`): Houses live, high-privilege credentials. Access to production secrets is usually restricted to specific owners, production agent identities, or CI/CD runner tokens.
+:::
 
 ---
 

@@ -11,6 +11,7 @@ AgentSecrets provides a native [Model Context Protocol (MCP)](https://modelconte
 
 When running `agentsecrets mcp install`, the CLI modifies your local MCP configuration file (e.g., `claude_desktop_config.json`). If this fails:
 
+:::step
 1. **Unsupported AI Assistant:** Ensure you are using a supported AI assistant that reads standard MCP config paths.
 2. **File Permissions:** Check if the CLI has write access to your AI assistant's configuration directory.
 3. **Manual Installation:** You can manually add the AgentSecrets MCP server to your config file:
@@ -22,6 +23,7 @@ When running `agentsecrets mcp install`, the CLI modifies your local MCP configu
      }
    }
    ```
+:::
 
 ## Agent Can't See the Tools
 
@@ -30,8 +32,10 @@ Once installed, the AgentSecrets MCP server exposes two primary tools to the AI:
 - `api_call`: Routes requests through the zero-knowledge proxy engine.
 
 If the agent claims it doesn't have these tools:
+:::step
 1. Completely restart your AI assistant (e.g., quit and reopen Claude Desktop).
 2. Ensure the `agentsecrets` binary is in your system's `$PATH` so the AI assistant can execute the `"command": "agentsecrets"` instruction.
+:::
 
 ## "api_call" Tool Failing
 

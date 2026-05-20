@@ -12,9 +12,11 @@ Agent Identity provides the core infrastructure to solve this, offering fine-gra
 
 Standard API key management systems treat the executing environment as a single trusted unit. This model breaks down under agentic workflows for three primary reasons:
 
+:::step
 1. **Prompt Injection Risks**: If an agent reads untrusted user content (such as parsing a webpage or scanning an email), it can be manipulated by malicious text instructions to exfiltrate secrets or make unauthorized API calls. If the executing environment shares a single flat pool of secrets, a compromised agent has access to all of them.
 2. **Attribution and Diagnostics**: When running concurrent agents in pipelines or swarms (e.g., using frameworks like LangChain, CrewAI, or AutoGen), general server logs only show incoming or outgoing requests. They cannot distinguish which agent initiated which call.
 3. **Least Privilege and Revocation**: If a single agent behaves unexpectedly or gets compromised, you should be able to revoke its access immediately. Without identity-based tracking, the only option is to rotate the entire environment's credentials, which causes immediate downtime for all other agents.
+:::
 
 ---
 

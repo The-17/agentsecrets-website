@@ -168,6 +168,7 @@ Add the server definition using `uv` to execute the Python script:
 
 Because Zero-Knowledge MCP servers do not bundle or configure hardcoded keys, publishing them is incredibly safe:
 
+:::step
 1. **Publish to GitHub/npm/PyPI**: You can push your MCP repository to a public GitHub repository. It contains no `.env` files, no hardcoded strings, and no production credentials.
 2. **Standardized Consuming**: Other developers or servers using your MCP server only need to install the package and run:
    ```bash
@@ -175,3 +176,4 @@ Because Zero-Knowledge MCP servers do not bundle or configure hardcoded keys, pu
    agentsecrets workspace allowlist add api.stripe.com
    ```
    The published MCP server will automatically hook into their local AgentSecrets proxy, keeping their keys secure on their local machines.
+:::

@@ -79,10 +79,12 @@ Switching environments changes runtime credential injection without changing app
 
 When the CLI needs to determine which environment to use, it resolves in this order:
 
+:::step
 1. `AGENTSECRETS_ENV` environment variable
 2. Project configuration
 3. Global configuration
 4. `development`
+:::
 
 This allows CI pipelines, local projects, and interactive sessions to coexist without conflicting state.
 

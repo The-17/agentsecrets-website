@@ -8,11 +8,13 @@ The `agentsecrets secrets` commands let you store, retrieve, sync, and audit cre
 
 Most workflows follow the same lifecycle:
 
+:::step
 1. Set a secret
 2. The value is encrypted locally
 3. The encrypted blob syncs to the cloud
 4. The proxy resolves the value at runtime
 5. Agents reference the key name, not the value
+:::
 
 Secrets are always scoped to:
 - a project
@@ -45,10 +47,12 @@ agentsecrets secrets set ANALYTICS_KEY=value --all-envs
 This prompts for confirmation before writing to all three environments.
 
 ### What happens internally
+:::step
 1. The CLI reads your workspace encryption key from `~/.agentsecrets/config.json`.
 2. Encrypts each value locally using `AES-256-GCM`.
 3. Sends the encrypted blob to the AgentSecrets API, the server stores the blob only.
 4. If your storage mode is Keychain, also writes the value to your OS keychain.
+:::
 
 
 ### Flags

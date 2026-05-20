@@ -42,10 +42,12 @@ Authorization: Bearer <your_jwt_or_agent_token>
 
 To prevent developers from being logged out during long-running tasks or background syncing (such as the proxy daemon syncing audit logs to the cloud), the CLI API client implements an automatic retry mechanism.
 
+:::step
 1. **401 Detection**: If an API request to a private endpoint fails with a `401 Unauthorized` status (indicating the Access Token has expired), the client pauses.
 2. **Dynamic Refresh**: The client issues a `POST` request to `/api/auth/refresh/` using the stored Refresh Token.
 3. **Save and Retry**: If the refresh is successful, the new Access and Refresh tokens are persisted to `~/.agentsecrets/token.json` and the failed request is re-built and executed exactly once with the new token.
 4. **Concurrency Protection**: The refresh flow is locked using a mutex (`refreshMu`) to ensure that multiple parallel asynchronous requests do not cause a "refresh storm" by hitting the refresh endpoint concurrently.
+:::
 
 ---
 

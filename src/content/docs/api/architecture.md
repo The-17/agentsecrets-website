@@ -21,10 +21,12 @@ When a client makes an API call, it goes through the following lifecycle:
         │<── JSON Response ──────────│
 ```
 
+:::step
 1. **Routing**: Incoming requests are routed by path to the appropriate API controller (e.g. `ResolverController` or `WorkspaceController`).
 2. **Authentication**: Handled via Django Ninja's middleware. Requests must present a valid JWT or Service Key (see [Authentication](/docs/api/authentication)).
 3. **Workspace Resolution**: For workspace-bound resources, the backend extracts the workspace ID from path variables or headers and verifies user membership.
 4. **Zero-Knowledge Sync**: For secret payloads, base64-encoded encrypted blobs are fetched or saved directly without processing their contents.
+:::
 
 ---
 
@@ -32,9 +34,11 @@ When a client makes an API call, it goes through the following lifecycle:
 
 The API supports three main authentication paths:
 
+:::step
 1. **User JWT Authentication**: Used by developers logging in via CLI or Web UI. Access tokens expire after 1 hour; refresh tokens last 6 hours.
 2. **Agent Token Authentication**: Used by credential proxies or runtime agents. Leverages short-lived cryptographic tokens issued for a specific agent identity.
 3. **Internal Service Key Authentication**: Used for service-to-service communication (e.g., between the proxy and resolver endpoints) authenticated via the `RESOLVER_SERVICE_KEY`.
+:::
 
 ---
 

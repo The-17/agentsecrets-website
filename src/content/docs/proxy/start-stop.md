@@ -13,10 +13,12 @@ agentsecrets proxy start
 ```
 
 When you run this command, the proxy:
+:::step
 1. Resolves your active project configuration from `.agentsecrets/project.json`.
 2. Connects to your local OS Keychain (macOS Keychain, Windows Credential Manager, or Linux Secret Service) to prepare for secure, hardware-backed secret decryption.
 3. Pulls down the latest domain allowlist and credential revocation lists from the AgentSecrets backend (storing only encrypted ciphertext or cryptographic hashes).
 4. Spawns a background worker process and binds an HTTP server to `127.0.0.1:8765`.
+:::
 
 If you prefer to run the proxy in the foreground for debugging or streaming logs directly to standard output, use the `--foreground` flag:
 

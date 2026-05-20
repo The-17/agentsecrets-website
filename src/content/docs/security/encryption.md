@@ -14,9 +14,11 @@ When you create a workspace, the CLI generates a symmetric **Workspace Master Ke
 
 ### Pushing Secrets
 When you run `agentsecrets secrets push`:
+:::step
 1. The CLI serializes your environment variables into a JSON object.
 2. It encrypts the entire JSON payload using the Workspace Master Key via AES-256-GCM.
 3. The resulting ciphertext, along with an authentication tag and nonce, is uploaded to the AgentSecrets API.
+:::
 
 The server stores the blob. It cannot read the JSON keys, the values, or the number of secrets.
 

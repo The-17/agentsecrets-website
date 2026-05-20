@@ -33,9 +33,11 @@ TIMESTAMP  KEY         TARGET URL                      IDENTITY   LEVEL       ST
 
 These gaps typically stem from three common scenarios:
 
+:::step
 1. **Legacy Scripts**: Older automated scripts that were written before Agent Identity was implemented, which use the default SDK initialization without parameters.
 2. **Direct Proxy Bypass**: HTTP calls routed through the local proxy endpoint (`localhost:8765/proxy`) that include target URLs and injection headers but omit the `X-AS-Agent-ID` or `X-AS-Agent-Token` headers.
 3. **Misconfigured Containers**: Background worker tasks deployed in Docker or Kubernetes where the container orchestrator failed to inject the `AGENTSECRETS_AGENT_ID` or `AGENTSECRETS_TOKEN` environment variables.
+:::
 
 ---
 

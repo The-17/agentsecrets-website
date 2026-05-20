@@ -21,9 +21,11 @@ If these calls are routed through the proxy, the attacker could exploit the prox
 
 The proxy employs a **deny-by-default** architecture, enforcing security at three levels before any network request is initiated:
 
+:::step
 1. **Domain Allowlist Validation**: The proxy verifies that the target domain exists in the active workspace allowlist. If the domain is not allowlisted, the call is blocked immediately.
 2. **DNS Resolution Verification**: If the domain is allowlisted, the proxy resolves the DNS records itself and inspects all resolved IP addresses *prior* to opening any socket connection.
 3. **SSRF Checks**: If any IP address resolves to a private, loopback, or cloud-specific range, the request is rejected with a `403 Forbidden` response and logged as a security alert.
+:::
 
 ---
 

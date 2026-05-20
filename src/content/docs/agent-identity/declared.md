@@ -70,9 +70,11 @@ Declaring agent identities is highly recommended for multi-agent workflows, as i
 
 While declared identities improve log readability, they do not provide cryptographic security. Before choosing declared identity for production workloads, you must understand its limitations:
 
+:::step
 1. **Vulnerable to Spoofing**: Declared identity is based entirely on self-reporting. If an agent is compromised via prompt injection, or if an unauthorized script runs on the host machine, it can claim to be `"invoice-generator"` to hide its activities or impersonate a high-privilege service.
 2. **No Dynamic Revocation**: Because declared identities are hardcoded or set in environment variables, you cannot block a compromised agent remotely. You must modify the source code, change the environment variables, or restart the container to remove its access.
 3. **No Granular Access Controls (ACLs)**: The proxy cannot enforce rules like *"Only allow the invoice-generator to use the Stripe secret."* Because identity is not verified, applying rules based on declared names is unsafe. The proxy will treat all declared identities on a host as having access to the host's active secrets pool.
+:::
 
 > [NOTE]
 > For production environments requiring strict security, data isolation, and the ability to instantly lock down specific agents, use **Issued Identity** with cryptographic tokens. Learn more in the [Issuing Cryptographic Tokens](./tokens-issue.md) guide.

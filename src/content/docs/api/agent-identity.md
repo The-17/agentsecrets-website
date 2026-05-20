@@ -34,6 +34,8 @@ Once registered, the CLI can request a cryptographic token for that agent. This 
 ## Auditing by Identity
 
 When the credential proxy forwards requests to external APIs, it signs the audit log with the active token:
+:::step
 1. The proxy matches the requests to the current active agent.
 2. The proxy sends the audit log containing the `agent_id` or token signature to the backend: `/api/internal/audit/logs/`.
 3. The workspace administrator can view precisely which agent used which credentials, and quickly revoke access for compromised or misbehaving agents without affecting other teammates.
+:::

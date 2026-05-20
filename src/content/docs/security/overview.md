@@ -8,9 +8,11 @@ The core guarantee of AgentSecrets is simple: **The actual value of your API cre
 
 To achieve this, the architecture isolates credentials into three distinct layers:
 
+:::step
 1. **The AI Agent (Untrusted)**: Only holds the **key name** (e.g., `OPENAI_API_KEY`). The agent has no programmatic method to read the actual value.
 2. **The Local Proxy (Trusted)**: A lightweight daemon running locally (on `localhost:8765`). It has access to your local OS Keychain (macOS Keychain, Windows Credential Manager, Linux Secret Service). It intercepts outbound requests from the agent, resolves the key name, injects the real credential into the HTTP headers at the transport layer, and forwards the request.
 3. **The Synchronization Server (Zero-Knowledge)**: Stores credentials in end-to-end encrypted (E2EE) ciphertext blobs. The cloud backend never sees your plaintext secrets or your master encryption keys.
+:::
 
 ```mermaid
 sequenceDiagram

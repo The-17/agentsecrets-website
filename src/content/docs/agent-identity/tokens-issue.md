@@ -54,8 +54,10 @@ $$\text{agt\_} + \text{workspace\_prefix} + \text{\_} + \text{cryptographic\_pay
 * **`4kR9mNpQ...`**: A high-entropy, base62-encoded cryptographic payload containing a token UUID and a signature signed by the workspace's private authority key.
 
 When the proxy receives an agent token, it performs two verification steps:
+:::step
 1. **Signature Check**: It decodes the payload and verifies the cryptographic signature locally using the workspace's public key (retrieved during initialization). This requires zero network roundtrips.
 2. **Revocation Check**: It queries its local cache (which synced with the cloud backend) to verify that the token's unique ID (`tok_7f9b8c2d`) has not been revoked.
+:::
 
 ---
 

@@ -55,10 +55,12 @@ The "zero-knowledge" in AgentSecrets refers to the architectural property that t
 
 When you push a secret to cloud sync, the following happens on your machine before anything leaves:
 
+:::step
 1. Your workspace key is retrieved from your OS keychain
 2. The secret value is encrypted using AES-256-GCM with a key derived from your workspace key via Argon2id
 3. The encrypted blob, nonce, and authentication tag are sent to the server
 4. Your workspace key never leaves your machine
+:::
 
 The server stores:
 

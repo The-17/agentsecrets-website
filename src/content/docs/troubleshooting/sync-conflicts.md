@@ -37,11 +37,13 @@ This command instantly updates your local proxy's cached state. If a teammate co
 
 When running `agentsecrets secrets push` or `secrets pull`, you might encounter a version mismatch:
 
+:::step
 1. **Pulling Remote Changes:** If the remote version is newer, pulling will safely update your local keychain.
    ```bash
    agentsecrets secrets pull
    ```
 2. **Pushing Local Changes:** If you modified a secret locally but another teammate pushed a newer version, your push will be rejected. You must pull the latest changes first, re-apply your update locally, and then push.
+:::
 
 > [CAUTION]
 > Avoid manually deleting keys from the OS keychain directly via macOS Keychain Access or Windows Credential Manager. Always use `agentsecrets secrets delete` to ensure the deletion and revocation are cryptographically synced to the cloud.

@@ -32,10 +32,12 @@ Changing the active environment and restarting the proxy changes which credentia
 
 When AgentSecrets needs to determine the active environment, it checks in this order:
 
+:::step
 1. `AGENTSECRETS_ENV` environment variable — highest priority, intended for CI/CD pipelines
 2. `.agentsecrets/project.json` in the current directory — per-project, set by `agentsecrets environment switch` from that project root
 3. Global config `selected_environment` — fallback across all projects
 4. `development` — hardcoded default if none of the above is set
+:::
 
 Each project directory can pin its own environment. Running `agentsecrets environment switch production` from a project directory writes to that project's `project.json`, not globally. A different terminal window working in a different project directory is unaffected.
 

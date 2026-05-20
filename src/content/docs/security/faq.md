@@ -31,9 +31,11 @@ Because the real API keys do not exist in the agent's environment or code variab
 **No.** AgentSecrets uses End-to-End Encryption (E2EE) powered by AES-256-GCM. 
 
 When you push secrets:
+:::step
 1. The CLI encrypts the secrets locally using your Workspace Master Key.
 2. The ciphertext is sent to the server.
 3. The server stores only the encrypted bytes.
+:::
 
 Because the Workspace Master Key is never shared with the server, the server has no technical means of decrypting your secrets.
 

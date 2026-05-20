@@ -18,6 +18,7 @@ Transport-layer injection means the credential value is added to the HTTP reques
 
 The sequence:
 
+:::step
 1. Your agent sends a request to `localhost:8765` with a key name in an injection header
 2. The proxy validates the target domain against the allowlist
 3. The proxy retrieves the key name from the request header
@@ -27,6 +28,7 @@ The sequence:
 7. The proxy sends the request to the target API
 8. The proxy receives the response, scans it for credential echoes, and redacts if found
 9. The proxy returns the API response to the caller and writes an audit log entry
+:::
 
 At no point does the decrypted value travel back through the proxy to the calling process. It flows only forward — from the proxy into the outbound request.
 
