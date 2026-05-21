@@ -182,7 +182,26 @@ function main() {
     }
 
     const raw = fs.readFileSync(filePath, 'utf8');
-    const chunks = extractChunks(raw, section.id, section.label, section.group);
+    
+    // Strip frontmatter and extract title override if present
+    let content = raw;
+    let titleOverride = "";
+    const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+    if (match) {
+      const yamlStr = match[1];
+      content = match[2];
+      const yamlLines = yamlStr.split(/\r?\n/);
+      for (const line of yamlLines) {
+        const colonIndex = line.indexOf(':');
+        if (colonIndex !== -1) {
+          const key = line.slice(0, colonIndex).trim();
+          const val = line.slice(colonIndex + 1).trim().replace(/^["']|["']$/g, '');
+          if (key === 'title') titleOverride = val;
+        }
+      }
+    }
+
+    const chunks = extractChunks(content, section.id, titleOverride || section.label, section.group);
     documents.push(...chunks);
   }
 

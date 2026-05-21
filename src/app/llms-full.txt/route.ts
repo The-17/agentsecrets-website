@@ -8,11 +8,11 @@ export async function GET() {
   output += `---\n\n`;
 
   for (const s of DOCS_SECTIONS) {
-    const rawContent = await getDocContent(s.id);
-    if (rawContent) {
+    const doc = await getDocContent(s.id);
+    if (doc) {
       output += `# DOCUMENT: ${s.label} (ID: ${s.id})\n\n`;
       // Strip any frontmatter or style tags if they exist to keep it super clean for LLMs
-      let cleanContent = rawContent.replace(/<style>[\s\S]*?<\/style>/g, "");
+      let cleanContent = doc.content.replace(/<style>[\s\S]*?<\/style>/g, "");
       output += cleanContent.trim();
       output += `\n\n---\n\n`;
     }

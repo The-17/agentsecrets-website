@@ -23,8 +23,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  const title = `${section.label} — AgentSecrets Docs`;
-  const description = `Learn how to safely give AI agents access to APIs without exposing your secrets. Deep dive into ${section.label} in the AgentSecrets security guides.`;
+  const doc = await getDocContent(activeId);
+  const frontmatterTitle = doc?.metadata?.title;
+  const frontmatterDescription = doc?.metadata?.description;
+
+  const title = frontmatterTitle 
+    ? `${frontmatterTitle} — AgentSecrets Docs`
+    : `${section.label} — AgentSecrets Docs`;
+    
+  const description = frontmatterDescription || `Learn how to safely give AI agents access to APIs without exposing your secrets. Deep dive into ${section.label} in the AgentSecrets security guides.`;
   const canonicalUrl = `https://agentsecrets.theseventeen.co/docs/${activeId === "what-is-agentsecrets" ? "" : activeId}`;
 
   return {
@@ -62,10 +69,10 @@ export default async function DocsDynamicPage({ params }: PageProps) {
   }
 
   // Fetch the markdown content on the server
-  const content = await getDocContent(activeId);
-  if (content === null) {
+  const doc = await getDocContent(activeId);
+  if (doc === null) {
     notFound();
   }
 
-  return <DocsActivePage activeId={activeId} content={content} />;
+  return <DocsActivePage activeId={activeId} content={doc.content} />;
 }

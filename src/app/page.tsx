@@ -13,6 +13,32 @@ import FAQSection from '@/components/faq-section';
 import Footer from '@/components/footer';
 
 export default function HomePage() {
+  React.useEffect(() => {
+    // Check if there is a hash in the URL on mount/transition (e.g., coming from /docs)
+    const handleHashScroll = () => {
+      const hash = window.location.hash;
+      if (hash) {
+        const id = hash.replace('#', '');
+        // A short timeout to ensure the DOM elements are fully mounted and laid out
+        const timer = setTimeout(() => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 450);
+        return () => clearTimeout(timer);
+      }
+    };
+
+    handleHashScroll();
+    
+    // Also listen to hash changes
+    window.addEventListener('hashchange', handleHashScroll);
+    return () => {
+      window.removeEventListener('hashchange', handleHashScroll);
+    };
+  }, []);
+
   return (
     <main className='selection-teal min-h-screen bg-white overflow-x-hidden'>
       <Nav />

@@ -259,8 +259,8 @@ export default function DocsPage() {
         setIsLoading(true);
         const data = await getDocContent(active);
         if (isMounted) {
-          if (data) docsCache[active] = data;
-          setContent(data);
+          if (data) docsCache[active] = data.content;
+          setContent(data ? data.content : null);
           setIsLoading(false);
           if (!pendingHeadingId && contentRef.current) {
             contentRef.current.scrollTo({ top: 0 });
@@ -281,7 +281,7 @@ export default function DocsPage() {
         
         for (const s of adjacent) {
           if (!docsCache[s.id]) {
-            getDocContent(s.id).then(data => { if (data) docsCache[s.id] = data; });
+            getDocContent(s.id).then(data => { if (data) docsCache[s.id] = data.content; });
           }
         }
 
@@ -291,7 +291,7 @@ export default function DocsPage() {
           const sameGroup = DOCS_SECTIONS.filter(s => s.group === currentGroup && s.id !== active);
           for (const s of sameGroup) {
             if (!docsCache[s.id]) {
-              getDocContent(s.id).then(data => { if (data) docsCache[s.id] = data; });
+              getDocContent(s.id).then(data => { if (data) docsCache[s.id] = data.content; });
             }
           }
         }, 500);
@@ -308,7 +308,7 @@ export default function DocsPage() {
             const batch = remaining.slice(i, i + BATCH_SIZE);
             for (const s of batch) {
               if (!docsCache[s.id]) {
-                getDocContent(s.id).then(data => { if (data) docsCache[s.id] = data; });
+                getDocContent(s.id).then(data => { if (data) docsCache[s.id] = data.content; });
               }
             }
             i += BATCH_SIZE;

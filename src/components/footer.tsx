@@ -20,7 +20,7 @@ const FOOTER_LINKS = [
 
 export default function Footer() {
   return (
-    <footer id="footer" className="w-full bg-white pt-24 pb-16 px-4 md:px-6 lg:px-8 relative">
+    <footer id="footer" className="w-full bg-white pt-24 pb-28 px-4 md:px-6 lg:px-8 relative">
       <div className="max-w-[1400px] mx-auto px-2 md:px-16 lg:px-20">
         
         {/* Top Section: Links & Branding */}
@@ -83,7 +83,7 @@ export default function Footer() {
         </div>
 
         {/* Baseline Row */}
-        <div className="pt-8 border-t border-[#1B1B1B]/5 flex flex-col md:flex-row items-center justify-between w-full text-[13px] font-medium tracking-tight">
+        <div className="mt-24 flex flex-col md:flex-row items-center justify-between w-full text-[13px] font-medium tracking-tight">
           <p className="text-[#1B1B1B]/40">© 2026 Agent Secrets. All rights reserved.</p>
           <div className="flex items-center gap-1.5 mt-4 md:mt-0">
             <span className="text-[#1B1B1B]/30">built by</span>
@@ -93,7 +93,7 @@ export default function Footer() {
               rel="noopener noreferrer" 
               className="text-[#1B1B1B] hover:text-[#0d9488] transition-colors underline decoration-[#1B1B1B]/30 underline-offset-[3px]"
             >
-              the seventeen
+              The Seventeen
             </a>
           </div>
         </div>

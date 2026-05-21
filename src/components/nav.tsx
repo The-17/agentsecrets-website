@@ -3,19 +3,21 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 
 const NAV_LINKS = [
-  { label: 'Model', href: '#model' },
-  { label: 'Platform', href: '#platform' },
+  { label: 'Model', href: '/#model' },
+  { label: 'Platform', href: '/#platform' },
   { label: 'Read docs_', href: '/docs', isPill: true },
-  { label: 'FAQ', href: '#faq' },
+  { label: 'FAQ', href: '/#faq' },
   { label: 'Github', href: 'https://github.com/The-17/agentsecrets', isExternal: true },
 ];
 
 export default function Nav({ page }: { page?: string }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const pathname = usePathname();
 
   // Prevent scroll when mobile menu is open
   useEffect(() => {
@@ -39,7 +41,7 @@ export default function Nav({ page }: { page?: string }) {
           <Link 
             href='/' 
             onClick={(e) => {
-              if (window.location.pathname === '/') {
+              if (pathname === '/') {
                 e.preventDefault();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }
@@ -65,6 +67,26 @@ export default function Nav({ page }: { page?: string }) {
               href={link.href}
               target={link.isExternal ? '_blank' : undefined}
               rel={link.isExternal ? 'noopener noreferrer' : undefined}
+              onClick={(e) => {
+                if (!link.isExternal && link.href.startsWith('/#')) {
+                  const targetId = link.href.split('#')[1];
+                  if (pathname === '/') {
+                    e.preventDefault();
+                    const el = document.getElementById(targetId);
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  } else {
+                    e.preventDefault();
+                    window.location.href = link.href;
+                  }
+                } else if (!link.isExternal && link.href === '/docs') {
+                  if (pathname !== '/docs') {
+                    e.preventDefault();
+                    window.location.href = '/docs';
+                  }
+                }
+              }}
               className={
                 link.isPill
                   ? 'btn-pill-teal'
@@ -107,7 +129,27 @@ export default function Nav({ page }: { page?: string }) {
                 >
                   <Link
                     href={link.href}
-                    onClick={() => setIsMobileOpen(false)}
+                    onClick={(e) => {
+                      if (!link.isExternal && link.href.startsWith('/#')) {
+                        const targetId = link.href.split('#')[1];
+                        if (pathname === '/') {
+                          e.preventDefault();
+                          const el = document.getElementById(targetId);
+                          if (el) {
+                            el.scrollIntoView({ behavior: 'smooth' });
+                          }
+                        } else {
+                          e.preventDefault();
+                          window.location.href = link.href;
+                        }
+                      } else if (!link.isExternal && link.href === '/docs') {
+                        if (pathname !== '/docs') {
+                          e.preventDefault();
+                          window.location.href = '/docs';
+                        }
+                      }
+                      setIsMobileOpen(false);
+                    }}
                     target={link.isExternal ? '_blank' : undefined}
                     rel={link.isExternal ? 'noopener noreferrer' : undefined}
                     className={

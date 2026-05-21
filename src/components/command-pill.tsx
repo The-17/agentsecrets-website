@@ -68,8 +68,8 @@ export default function CommandPill() {
   const calmBounce = { type: 'spring', stiffness: 180, damping: 18 } as const;
 
   return (
-    <div className='fixed bottom-6 sm:bottom-8 left-0 right-0 z-[100] px-5 flex justify-center'>
-      <div ref={menuRef} className='relative flex flex-col items-center max-w-full'>
+    <div className='fixed bottom-6 sm:bottom-8 left-0 right-0 z-[100] px-5 flex justify-center pointer-events-none'>
+      <div ref={menuRef} className='relative flex flex-col items-center max-w-full pointer-events-auto'>
 
         <AnimatePresence>
           {isOpen && (

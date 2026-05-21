@@ -76,23 +76,35 @@ const METHOD_CONTENT: Record<IntegrationMethod, { icon?: React.ReactNode; title:
   }
 };
 
+const renderCodeLine = (line: string, i: number) => {
+  if (line.trim().startsWith('#')) {
+    return (
+      <div key={i} style={{ color: '#7f848e', fontStyle: 'italic' }}>
+        {line}
+      </div>
+    );
+  }
+
+  const html = line
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\b(agentsecrets|openclaw|curl|node|python|npm|brew|pip|go)\b/g, '<span style="color: #61afef; font-weight: 500;">$1</span>')
+    .replace(/(^|\s)(-[HXD]|\-\-)\b/g, '$1<span style="color: #c678dd;">$2</span>')
+    .replace(/("(\w+)")\s*:/g, '<span style="color: #e06c75;">$1</span>:')
+    .replace(/("(.*?)")/g, '<span style="color: #98c379;">$1</span>');
+
+  return (
+    <div key={i} dangerouslySetInnerHTML={{ __html: html }} />
+  );
+};
+
 export default function PlatformSection() {
   const [activeMethod, setActiveMethod] = React.useState(INTEGRATION_METHODS[0]);
   const containerRef = useRef<HTMLElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
 
   const content = METHOD_CONTENT[activeMethod];
-
-  const highlightedCode = React.useMemo(() => {
-    return content.code.split('\n').map(line => {
-      if (line.trim().startsWith('#')) {
-        return `<span class="code-comment">${line}</span>`;
-      }
-      return line
-        .replace(/\b(agentsecrets|openclaw)\b/g, '<span class="code-keyword">$1</span>')
-        .replace(/("(.*?)")/g, '<span class="code-string">$1</span>');
-    }).join('\n');
-  }, [content.code]);
 
   useGSAP(() => {
     if (!containerRef.current) return;
@@ -219,22 +231,9 @@ export default function PlatformSection() {
                     {/* Right: Command Block */}
                     <div className='flex items-center justify-center'>
                       <div className='w-full bg-[#282c34] rounded-[16px] md:rounded-[24px] px-4 md:px-8 py-6 md:py-14 border border-[#3e4451] relative overflow-hidden group shadow-xl'>
-                        <pre className='font-mono text-[11px] sm:text-[12px] md:text-[14px] leading-relaxed text-[#FBBF24] whitespace-pre-wrap break-all sm:break-words'>
+                        <pre className='font-mono text-[11px] sm:text-[12px] md:text-[14px] leading-relaxed text-[#abb2bf] whitespace-pre-wrap break-all sm:break-words'>
                           <code>
-                            {methodContent.code.split('\n').map((line, i) => {
-                              if (line.trim().startsWith('#')) {
-                                return (
-                                  <div key={i} style={{ color: '#5c6370', fontStyle: 'italic' }}>
-                                    {line}
-                                  </div>
-                                );
-                              }
-                              return (
-                                <div key={i}>
-                                  {line}
-                                </div>
-                              );
-                            })}
+                            {methodContent.code.split('\n').map((line, i) => renderCodeLine(line, i))}
                           </code>
                         </pre>
                       </div>
