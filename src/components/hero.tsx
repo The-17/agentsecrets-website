@@ -13,7 +13,7 @@ gsap.registerPlugin(SplitText, ScrollTrigger);
 
 export default function Hero() {
   const [stars, setStars] = useState<number | string>(0);
-  const [latestTag, setLatestTag] = useState('v1.1.2');
+  const [latestTag, setLatestTag] = useState('v1.4.0');
   const [totalSecretsStored, setTotalSecretsStored] = useState<number | string>(0);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -31,11 +31,14 @@ export default function Hero() {
       })
       .catch(() => setStars('92'));
 
-    fetch('https://api.github.com/repos/The-17/agentsecrets/tags')
-      .then(res => res.json())
+    fetch('https://api.github.com/repos/The-17/agentsecrets/releases/latest')
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to fetch release');
+        return res.json();
+      })
       .then(data => {
-        if (Array.isArray(data) && data.length > 0 && data[0].name) {
-          setLatestTag(data[0].name);
+        if (data && data.tag_name) {
+          setLatestTag(data.tag_name);
         }
       })
       .catch(() => {});
@@ -117,7 +120,7 @@ export default function Hero() {
           className='flex flex-wrap justify-center items-center gap-2 sm:gap-3 mb-10 sm:mb-24'
           style={{ opacity: 0 }}
         >
-          <span className='px-3.5 py-1 rounded-md text-[12px] font-light tracking-tight bg-[#F5F5F7]/60 text-[#1B1B1B] font-poppins'><RollingNumber value={latestTag} delay={1.5} /></span>
+          <span className='px-3.5 py-1 rounded-md text-[12px] font-light tracking-tight bg-[#F5F5F7]/60 text-[#1B1B1B] font-poppins'><RollingNumber key={latestTag} value={latestTag} delay={1.5} /></span>
           <a
             href='https://github.com/The-17/agentsecrets/stargazers'
             target='_blank'

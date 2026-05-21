@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    const response = await fetch('https://secrets-api-orpin.vercel.app/telemetry/metrics/', {
+    const response = await fetch('https://api.agentsecrets.theseventeen.co/telemetry/metrics/', {
       cache: 'no-store'
     });
     
