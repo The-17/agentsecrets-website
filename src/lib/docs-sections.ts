@@ -26,6 +26,7 @@ export const DOCS_SECTIONS = [
 
   // CLI Reference
   { id: "cli/account", group: "CLI Reference", label: "Account (init / login)" },
+  { id: "cli/keychain-auth", group: "CLI Reference", label: "Keychain Auth" },
   
   // CLI: Secrets
   { id: "secrets/managing", group: "CLI Reference", label: "Secrets" },
