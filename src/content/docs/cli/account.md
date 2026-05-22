@@ -6,6 +6,8 @@ agentsecrets init
 ```
 Creates your account, generates encryption keys locally, and sets up your first workspace. On returning machines, detects existing accounts and walks you through joining your workspace. Accepts `--storage-mode 1` (keychain only) or `--storage-mode 2` (keychain and .env). Defaults to keychain only.
 
+Additionally, it automatically generates a local `.agent/workflows/agentsecrets.md` file (the OpenClaw skill) which teaches any AI assistants operating in the directory how to safely use the AgentSecrets CLI without exposing your credentials.
+
 ## agentsecrets login
 ```bash
 agentsecrets login

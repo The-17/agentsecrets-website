@@ -69,7 +69,7 @@ export default function ModelSection() {
           {/* Body Text */}
           <div
             ref={bodyRef}
-            className='text-[clamp(18px,1.5vw,24px)] font-light leading-[1.65] tracking-[-0.01em] text-[#1B1B1B] text-left'
+            className='text-[clamp(18px,1.5vw,24px)] font-normal leading-[1.65] tracking-[-0.01em] text-[#1B1B1B] text-left'
           >
           <p className="mb-10">
             Every secrets tool built before the agentic era was designed around the same assumption: the application is trusted.
