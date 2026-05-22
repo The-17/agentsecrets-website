@@ -17,6 +17,16 @@ AgentSecrets enforces least privilege at the runtime level. An AI agent is given
 ### Is AgentSecrets open source?
 Yes. The AgentSecrets CLI, local credential proxy, Python SDK, and Zero-Knowledge MCP server templates are open source under the MIT license. The central synchronization backend is a hosted service, with open-core self-hosting templates available for enterprise teams.
 
+### What is the `keychain-auth` daemon and why is it necessary?
+The `keychain-auth` daemon is a core component introduced in v2.0.0. It runs as a background process and serves as the exclusive gatekeeper to your local OS keychain. By moving cryptographic operations out of the CLI and into this daemon, AgentSecrets enforces **Process-Level Security** (Anti-Impersonation). When the CLI or a proxy makes a request for secrets, the daemon verifies the cryptographic hash of the calling binary. This ensures that no unauthorized malware or script on your machine can impersonate legitimate AgentSecrets tools to extract decryption keys.
+
+### I upgraded to v2.0.0 and my OS is showing keychain permission prompts. How do I migrate?
+For most users, upgrading to `v2.0.0` is seamless. However, because `v2.0.0` introduces the `keychain-auth` daemon as the exclusive broker for your secrets, it takes over ownership of credentials from the legacy CLI. 
+
+If your OS (particularly macOS or Linux) prompts you with a warning that a new binary is trying to access your keychain, **simply click "Always Allow"**. This explicitly authorizes the new daemon, migrating the Access Control List (ACL) for those secrets.
+
+If your local state feels out of sync or you want to forcefully refresh it, you can run `agentsecrets pull`. This will fetch your latest secrets from the cloud and overwrite the specific keychain entries locally (though you may still need to approve the OS prompt to allow the overwrite).
+
 ---
 
 ## AI Agent and LLM Security

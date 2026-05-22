@@ -21,13 +21,14 @@ AgentSecrets enables teams to deploy AI agents and automated workflows with stri
 
 The synchronization and coordination layer of AgentSecrets is built on a zero-knowledge model. Plaintext credential values never leave your local environment.
 
-### At-Rest Encryption
+### At-Rest Encryption & Process-Level Security
 
-When secrets are defined locally, they are secured via your operating system keychain (macOS Keychain, Windows Credential Manager, or Linux Secret Service). 
+When secrets are defined locally, they are secured via your operating system keychain (macOS Keychain, Windows Credential Manager, or Linux Secret Service). Because accessing the OS keychain safely requires process-level boundaries, AgentSecrets runs a secure background daemon called `keychain-auth` to manage all cryptographic operations.
 
 When you sync these secrets to the cloud:
-1. The AgentSecrets CLI retrieves the symmetric **Workspace Key** from your OS keychain.
-2. The payload is encrypted locally using **AES-256-GCM** with a key derived from the Workspace Key via **Argon2id**.
+1. The `keychain-auth` daemon validates the cryptographic hash of the AgentSecrets CLI binary to prevent impersonation (Anti-Impersonation).
+2. Once verified, the daemon retrieves the symmetric **Workspace Key** from your OS keychain.
+3. The payload is encrypted locally using **AES-256-GCM** with a key derived from the Workspace Key via **Argon2id**.
 3. The resulting ciphertext blob and initialization vectors (nonce and tag) are pushed to the backend database.
 4. The server wraps this base64 blob in a second layer of **Fernet** encryption at rest. Because the server does not possess the Workspace Key, it is mathematically blind to your secrets.
 
@@ -119,6 +120,9 @@ Finally, the proxy logs the metadata of the call (timestamp, requesting agent to
 ## Outbound Access Control and Identity Scoping
 
 To ensure complete runtime security, AgentSecrets enforces boundaries at two levels:
+
+### Binary Anti-Impersonation (Keychain Auth)
+Before any request is intercepted or keys are fetched, the local `keychain-auth` daemon verifies the cryptographic hash and execution path of the proxy making the request. This ensures that no unauthorized script or malware running locally can impersonate the legitimate proxy or CLI to extract credentials.
 
 ### Cryptographic Agent Identity
 AI agents do not run anonymously. Every agent instance is issued a cryptographic **Agent Token**. When the agent makes requests through the proxy:

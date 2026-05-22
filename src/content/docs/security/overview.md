@@ -39,6 +39,7 @@ To understand specific parts of our security implementation, explore the dedicat
 - **[Encryption Model](/docs/security/encryption)**: Read about the AES-256-GCM, Argon2id, and ECDH protocols securing secrets at rest and in transit.
 - **[Zero-Knowledge Cloud Sync](/docs/security/cloud-sync)**: Learn how team synchronization works without the central server ever gaining decryption capabilities.
 - **[Proxy Security Layers](/docs/security/proxy-layers)**: Explore the TLS interception, domain allowlists, and response body redaction architecture.
+- **[Binary Anti-Impersonation](/docs/security/anti-impersonation)**: Understand how the `keychain-auth` daemon protects against local malicious scripts.
 - **[Threat Model](/docs/security/threat-model)**: A formal analysis of threat actors, assets, and attack vectors.
 - **[Third-Party Audit Status](/docs/security/audit-status)**: Details on our upcoming and current cryptographic audits.
 - **[Reporting Vulnerabilities](/docs/security/reporting)**: Our SLA and policy for responsible vulnerability disclosure.

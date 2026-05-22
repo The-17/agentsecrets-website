@@ -13,6 +13,8 @@ AI agents are different. A coding assistant reading your codebase can also read 
 
 AgentSecrets removes the value from that space entirely. The agent passes a key name. The proxy resolves the real value from the OS keychain and injects it at the transport layer. The agent receives the API response. The value existed in memory for the milliseconds required to make the HTTP request and nowhere else.
 
+Furthermore, AgentSecrets features strict **Keychain Integration (Anti-Impersonation)**. A background `keychain-auth` daemon verifies the cryptographic hash and identity of any local process attempting to resolve secrets, ensuring that no malicious script can impersonate your legitimate tools or extract the decryption keys.
+
 ## How it fits into your stack
 
 AgentSecrets sits directly between your AI agent (or execution environment) and the external APIs it calls. It acts as a local security boundaries layer, intercepting outbound requests, validating permission scopes, and injecting keys securely at the transport layer.
