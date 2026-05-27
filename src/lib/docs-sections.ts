@@ -26,6 +26,7 @@ export const DOCS_SECTIONS = [
 
   // CLI Reference
   { id: "cli/account", group: "CLI Reference", label: "Account (init / login)" },
+  { id: "cli/docs", group: "CLI Reference", label: "Docs" },
   { id: "cli/keychain-auth", group: "CLI Reference", label: "Keychain Auth" },
   
   // CLI: Secrets
@@ -175,6 +176,7 @@ export const DOCS_SECTIONS = [
   { id: "faq", group: "FAQ", label: "Frequently Asked Questions" },
 
   // Changelog
+  { id: "changelog/v2-1-0", group: "Changelog", label: "v2.1.0" },
   { id: "changelog/v2-0-0", group: "Changelog", label: "v2.0.0" },
   { id: "changelog/v1-4-0", group: "Changelog", label: "v1.4.0" },
   { id: "changelog/v1-3-0", group: "Changelog", label: "v1.3.x" },

@@ -79,9 +79,10 @@ export async function GET(request: NextRequest) {
     const boostedScore = r.score * (0.5 + priority);
     
     if (!seen.has(sectionId) || boostedScore > seen.get(sectionId).score) {
+      const headingId = String(r.id).split("::")[1] || "";
       seen.set(sectionId, {
-        id: sectionId,
-        url: `${baseUrl}/docs/${sectionId === "what-is-agentsecrets" ? "" : sectionId}`,
+        id: r.id,
+        url: `${baseUrl}/docs/${sectionId === "what-is-agentsecrets" ? "" : sectionId}${headingId ? '#' + headingId : ''}`,
         title: (r as any).title,
         group: (r as any).group,
         label: (r as any).title || (r as any).label,
