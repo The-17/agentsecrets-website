@@ -143,7 +143,6 @@ export const DOCS_SECTIONS = [
 
   // Guides
   { id: "guides/guide", group: "Guides", label: "Guides Overview" },
-  { id: "guides/sharing-credentials", group: "Guides", label: "Sharing Credentials" },
   { id: "guides/stripe", group: "Guides", label: "Stripe Integration" },
   { id: "guides/openai", group: "Guides", label: "OpenAI Integration" },
   { id: "guides/multi-agent", group: "Guides", label: "Multi-Agent Setup" },
