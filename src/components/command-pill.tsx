@@ -30,10 +30,11 @@ export default function CommandPill() {
   const menuRef = useRef<HTMLDivElement>(null);
   const isDocsPage = pathname?.startsWith('/docs');
 
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
-    // Small delay to prevent layout shift during hydration/mount
-    const timer = setTimeout(() => setIsReady(true), 2400);
-    return () => clearTimeout(timer);
+    setMounted(true);
+    setIsReady(true);
   }, []);
 
   useEffect(() => {
@@ -55,7 +56,7 @@ export default function CommandPill() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  if (isDocsPage) return null;
+  if (!mounted || isDocsPage) return null;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(method.command);
@@ -114,8 +115,8 @@ export default function CommandPill() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ 
             default: calmBounce, 
-            opacity: { delay: 1.8, duration: 1.2, ease: [0.16, 1, 0.3, 1] }, 
-            y: { delay: 1.8, duration: 1.2, ease: [0.16, 1, 0.3, 1] } 
+            opacity: { delay: 0.1, duration: 0.8, ease: [0.16, 1, 0.3, 1] }, 
+            y: { delay: 0.1, duration: 0.8, ease: [0.16, 1, 0.3, 1] } 
           }}
           className='bg-[#005E50] rounded-full shadow-lg inline-flex items-center gap-1 sm:gap-1.5 border border-white/[0.08] max-w-full h-[52px]'
           style={{ paddingLeft: '24px', paddingRight: isReady ? '8px' : '24px' }}

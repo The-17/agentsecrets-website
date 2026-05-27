@@ -8,7 +8,7 @@ By decoupling credentials from the application runtime, AgentSecrets ensures tha
 
 ## Core Capabilities Enabled
 
-AgentSecrets enables teams to deploy AI agents and automated workflows with strict security boundaries:
+AgentSecrets enables developers to build and run AI agents and automated workflows with strict security boundaries:
 
 - **Absolute Context Decoupling**: AI agents only hold key references (e.g., `STRIPE_KEY`) rather than plaintext values. This protects credentials from prompt injection attacks, context window leakage, and compromised third-party dependencies.
 - **Zero-Trust Team Synchronization**: Team members can share environments and sync secrets securely without ever exposing decryption keys to the central coordination server.
@@ -17,9 +17,9 @@ AgentSecrets enables teams to deploy AI agents and automated workflows with stri
 
 ---
 
-## Cryptographic Zero-Knowledge Architecture
+## Zero-Knowledge Architecture
 
-The synchronization and coordination layer of AgentSecrets is built on a zero-knowledge model. Plaintext credential values never leave your local environment.
+The zero-knowledge nature of AgentSecrets is holistic: **the credential value itself is never present or visible at any point in the entire architecture**. From storage and cloud synchronization to runtime execution and transport-layer injection, the raw secret value remains completely hidden from the agent, the host application, and the sync servers.
 
 ### At-Rest Encryption & Process-Level Security
 
@@ -29,35 +29,26 @@ When you sync these secrets to the cloud:
 1. The `keychain-auth` daemon validates the cryptographic hash of the AgentSecrets CLI binary to prevent impersonation (Anti-Impersonation).
 2. Once verified, the daemon retrieves the symmetric **Workspace Key** from your OS keychain.
 3. The payload is encrypted locally using **AES-256-GCM** with a key derived from the Workspace Key via **Argon2id**.
-3. The resulting ciphertext blob and initialization vectors (nonce and tag) are pushed to the backend database.
-4. The server wraps this base64 blob in a second layer of **Fernet** encryption at rest. Because the server does not possess the Workspace Key, it is mathematically blind to your secrets.
+4. The resulting ciphertext blob and initialization vectors (nonce and tag) are pushed to the backend database.
+5. The server wraps this base64 blob in a second layer of **Fernet** encryption at rest. Because the server does not possess the Workspace Key, it is mathematically blind to your secrets.
 
 ### Asymmetric Team Sharing
 
 To share credentials with teammates without a centralized key custodian, AgentSecrets uses a zero-trust asymmetric key exchange (NaCl SealedBox utilizing Curve25519):
 
 ```mermaid
-flowchart TB
-    subgraph ClientA["Client A (Inviter)"]
-        WK["Workspace Key"]
-        IK_Pub["Client B Public Key"]
-        Envelope["Sealed Envelope\n(NaCl SealedBox)"]
-        WK -->|Encrypted with| IK_Pub
-        IK_Pub --> Envelope
-    end
-    
-    subgraph Backend["Backend (Untrusted Coordinator)"]
-        ServerEnvelope["Stored Envelope"]
-    end
-    
-    subgraph ClientB["Client B (Invitee)"]
-        IK_Priv["Client B Private Key"]
-        DecryptedWK["Workspace Key"]
-    end
-    
-    Envelope -->|Uploaded| ServerEnvelope
-    ServerEnvelope -->|Downloaded| IK_Priv
-    IK_Priv -->|Decrypts| DecryptedWK
+sequenceDiagram
+    participant A as Client A (Inviter)
+    participant S as Sync Server (Untrusted Coordinator)
+    participant B as Client B (Invitee)
+
+    Note over B: Generates Keypair (Curve25519)
+    B->>S: Publish Public Key
+    A->>S: Fetch Client B's Public Key
+    Note over A: Encrypts Workspace Key with Public Key<br/>(NaCl SealedBox)
+    A->>S: Upload Encrypted Envelope
+    B->>S: Download Encrypted Envelope
+    Note over B: Decrypts with Private Key<br/>to retrieve Workspace Key
 ```
 
 1. **Key Generation**: When team members register, their local CLI generates an asymmetric Curve25519 keypair. The private key remains locally in their keychain; the public key is uploaded to the backend.
@@ -68,64 +59,68 @@ flowchart TB
 
 ## The Proxy Call Lifecycle
 
-The local AgentSecrets proxy intercepts outgoing requests, validates them against the active SEC contract and target allowlists, and injects resolved credentials right before they hit the wire.
+The AgentSecrets proxy intercepts outgoing requests, validates them against target allowlists, and injects resolved credentials right before they hit the wire.
 
 ```mermaid
 sequenceDiagram
     autonumber
     participant Agent as AI Agent (Context)
-    participant Proxy as Local Proxy (localhost:8765)
-    participant SEC as SEC Engine
+    participant Proxy as Proxy (localhost:8765)
     participant Keychain as OS Keychain
     participant Target as Upstream API (e.g., Stripe)
     
-    Agent->>Proxy: Outbound Request (bearer="STRIPE_KEY", SEC_CONTRACT_TOKEN)
+    Agent->>Proxy: Outbound Request (bearer="STRIPE_KEY")
     Note over Proxy: Step 1: Intercept Request
     
-    Proxy->>SEC: Step 2: Validate Signed Execution Contract (verify --token SEC_TOKEN --action ACTION)
-    alt SEC Validation Fails
-        SEC-->>Proxy: Exit 1 or 2 (Error or Policy Violation)
-        Proxy-->>Agent: HTTP 403 Forbidden (Blocked)
-    end
-    SEC-->>Proxy: Exit 0 (Approved)
-    
-    Note over Proxy: Step 3: Check Domain Allowlist
+    Note over Proxy: Step 2: Check Domain Allowlist
     alt Domain not allowlisted
         Proxy-->>Agent: HTTP 403 Forbidden (Blocked)
     end
     
-    Proxy->>Keychain: Step 4: Fetch secret value securely (via Keychain-Auth)
+    Proxy->>Keychain: Step 3: Fetch secret value securely (via Keychain-Auth)
     Note over Keychain: Verify process signature & capability bounds
     Keychain-->>Proxy: Return plaintext value ("sk_live_...")
     
-    Note over Proxy: Step 5: Inject value into transport headers
+    Note over Proxy: Step 4: Inject value into transport headers
     Proxy->>Target: Outbound HTTPS (Header: Authorization: Bearer sk_live_...)
     Target-->>Proxy: HTTP Response Payload
     
-    Note over Proxy: Step 6: Redact any reflected key value in response
+    Note over Proxy: Step 5: Redact any reflected key value in response
     Proxy-->>Agent: Clean API Response
-    Note over Proxy: Log audit metadata (Timestamp, Agent Token, Domain, SEC Provenance)
+    Note over Proxy: Log audit metadata (Timestamp, Agent Token, Domain)
 ```
 
-### Step 1: Request Interception
-The AI agent or application sends an outbound HTTP/HTTPS request, pointing authorization headers or request bodies to a placeholder key name (e.g. `bearer="STRIPE_KEY"`). The proxy daemon (running locally at `localhost:8765`) intercepts this request.
+### 1. Request Interception
 
-### Step 2: Signed Execution Contract (SEC) Attestation
-If a contract token is active (passed in the request headers, environment variable `SEC_CONTRACT_TOKEN`, or session context), the proxy invokes the SEC engine to verify the cryptographic contract against the attempted action. The SEC engine deterministically checks timing invariants, JTI replay status, and allowlist glob patterns. If the contract check fails or has expired, the proxy rejects the request immediately.
+:::step
+The AI agent or application sends an outbound HTTP/HTTPS request, pointing authorization headers or request bodies to a key name (e.g. `bearer="STRIPE_KEY"`). The proxy daemon (running at `localhost:8765`) intercepts this request.
+:::
 
-### Step 3: Pre-Execution Allowlist Check
+### 2. Pre-Execution Allowlist Check
+
+:::step
 As an additional safety net, the target host is checked against the active workspace domain allowlist. If the domain is not authorized, the proxy aborts the execution with a `403 Forbidden`, logs the blocked attempt, and stops. This prevents prompt injections from exfiltrating credentials to external hacker-controlled servers.
+:::
 
-### Step 4: Local Decryption and Anti-Impersonation
+### 3. Decryption and Anti-Impersonation
+
+:::step
 The proxy locates the workspace key, environment context, and key name. It queries the background `keychain-auth` daemon. The daemon verifies the cryptographic hash of the calling proxy process to ensure no unauthorized process is attempting to fetch secrets. Once approved, it decrypts the secret value inside the proxy daemon's private memory space. The decrypted value is never written to disk, output to standard streams, or returned to the calling agent process.
+:::
 
-### Step 5: Transport-Layer Injection
+### 4. Transport-Layer Injection
+
+:::step
 The decrypted credential is substituted into the request payload at the network layer. Depending on the configured injection style, it is placed in headers (e.g., `Authorization: Bearer`), URL query parameters, or JSON body fields. The request is then securely forwarded to the upstream API using TLS.
+:::
 
-### Step 6: Response Scanning and Redaction
+### 5. Response Scanning and Redaction
+
+:::step
 Once the upstream API returns a response, the proxy scans the body. If the upstream service reflects the API key back in the payload (often found in error logs or debug fields), the proxy redacts it, replacing the token with `[REDACTED_BY_AGENTSECRETS]`.
 
-Finally, the proxy logs the metadata of the call (timestamp, requesting agent token, environment, endpoint, response status, duration, and SEC contract provenance if present) to the local audit log. No credential values are ever saved in the logs. The redacted response is then handed to the calling agent code.
+Finally, the proxy logs the metadata of the call (timestamp, requesting agent token, environment, endpoint, response status, and duration) to the audit log. No credential values are ever saved in the logs. The redacted response is then handed to the calling agent code.
+:::
 
 ---
 
@@ -137,10 +132,13 @@ To ensure complete runtime security, AgentSecrets enforces boundaries at two lev
 Before any request is intercepted or keys are fetched, the local `keychain-auth` daemon verifies the cryptographic hash and execution path of the proxy making the request. This ensures that no unauthorized script or malware running locally can impersonate the legitimate proxy or CLI to extract credentials.
 
 ### Cryptographic Agent Identity
-AI agents do not run anonymously. Every agent instance is issued a cryptographic **Agent Token**. When the agent makes requests through the proxy:
-- The proxy validates the agent token.
-- The request audit is linked to the agent's identity.
-- You can revoke an individual agent token instantly via the dashboard or CLI without rotating or changing the underlying credentials, isolating compromises immediately.
+
+By default, AgentSecrets supports anonymous execution for simple, single-agent setups or one-off tools. However, for multi-agent workflows, you can enforce cryptographic identity attribution:
+- **Anonymous Execution (Default)**: Outbound calls are permitted and logged with no agent attribution (marked as `anonymous`).
+- **Cryptographic Attribution**: Every authorized agent instance is issued a cryptographic **Agent Token**. When an agent makes requests:
+  - The proxy cryptographically validates the token.
+  - The request is linked to the agent's identity in the audit log.
+  - You can instantly revoke an individual agent's token without rotating or changing underlying workspace credentials, isolating compromises immediately.
 
 ### Environment Boundaries
 Credentials are bound to environment namespaces (`development`, `staging`, `production`). The proxy enforces runtime boundaries, preventing development code from using production-level credentials, and vice versa, keeping data access segregated.

@@ -7,8 +7,11 @@ AgentSecrets ships as a native exec provider for OpenClaw's SecretRef system (Op
 ```bash
 # Install from ClawHub
 openclaw skill install agentsecrets
+```
 
-# Verify
+### Verify
+
+```bash
 openclaw skill list | grep agentsecrets
 # agentsecrets ✓ active
 ```

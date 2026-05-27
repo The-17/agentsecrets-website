@@ -13,6 +13,14 @@ if (typeof window !== 'undefined') {
 
 const FAQ_ITEMS = [
   {
+    question: "How long does setup take? Do I need to perform grand architectural changes to my app?",
+    answer: "Zero. Setup is virtually instantaneous. You can initialize the infrastructure in exactly 10 seconds with a single command: `npx @the-17/agentsecrets init`. There are no configuration files to manage, no SDK code modifications required, and no custom networking needed. It sits silently under your application process layer. You keep writing your code exactly as you do today."
+  },
+  {
+    question: "How does AgentSecrets protect my keys during local AI-assisted development (e.g., Cursor, Claude Desktop)?",
+    answer: "AI coding assistants and local LLMs are fully capable of reading files within your workspace, including raw `.env` files containing highly sensitive production API keys. By migrating your `.env` values to AgentSecrets, your local workspace contains zero plaintext credentials. When your code runs, the values are securely fetched from your OS keychain and injected at runtime. Your coding assistant can read your entire workspace, edit your files, and execute helper tasks, but it is physically blind to your raw secrets."
+  },
+  {
     question: "How does AgentSecrets prevent LLM prompt injection attacks from stealing API keys?",
     answer: "Traditional secrets managers load credentials into process memory or environment variables, which can be easily extracted by an LLM via prompt injection. AgentSecrets uses a local loopback HTTP proxy. Your agent workflows or MCP servers reference keys only by their name (e.g., GITHUB_TOKEN). The local proxy intercepts outbound HTTP requests, fetches the credential from the OS keychain, injects it into the request header at the transport layer, and forwards the request. The agent process only receives the final API response—the raw key value never enters the agent's memory or context."
   },
@@ -26,15 +34,15 @@ const FAQ_ITEMS = [
   },
   {
     question: "Does AgentSecrets support multi-environment isolation (Dev, Staging, Prod)?",
-    answer: "Yes. AgentSecrets allows you to define separate environments at the runtime level. You can scope your credentials (e.g., STRIPE_KEY) to development, staging, or production. The local proxy enforces boundaries, preventing local development runs or test agents from accidentally calling production endpoints or injecting production-level keys, keeping your test and live environments strictly separated."
+    answer: "Yes. Every project in AgentSecrets is pre-configured with three isolated environments: development, staging, and production. You can scope your credentials (e.g., STRIPE_KEY) specifically to any of these three environments. The local proxy automatically enforces boundaries, preventing local development runs or test agents from accidentally calling production endpoints or injecting production-level keys, keeping your test and live environments strictly separated."
   },
   {
     question: "How does the Zero-Knowledge team synchronization work?",
     answer: "When syncing secrets across a team, credentials are encrypted client-side using NaCl SealedBox (Curve25519) public-key cryptography before being sent to the sync server. The server stores only the encrypted ciphertext. Since the sync server never holds the private key or the plaintext credentials, a compromise of the sync server infrastructure yields zero readable secrets. New team members can onboard and fetch workspace configurations seamlessly without keys ever being exposed in plaintext."
   },
   {
-    question: "Can I use AgentSecrets offline, and what happens if the sync server is down?",
-    answer: "Yes. AgentSecrets is local-first. All credentials are stored directly in your local OS keychain (macOS Keychain, Linux Secret Service via D-Bus, or Windows Credential Manager). The local proxy operates completely offline without any external network dependencies. Cloud sync is optional and secondary; if the sync server goes offline, your agents and CLI tools continue to function with zero disruption."
+    question: "Can I use AgentSecrets offline, and what role does the API backend server play?",
+    answer: "AgentSecrets is designed local-first: all credential resolution, anti-impersonation process checks, and local transport-layer proxy injections occur entirely on your local machine (using loopback interfaces and your secure OS keychain). This local pipeline runs completely offline. However, the system relies on the secure API backend server for coordination tasks: user authentication, workspace synchronization, key rotation policies, and issuing verifiable cryptographic agent tokens for remote or containerized agent runtimes."
   },
   {
     question: "Is AgentSecrets compatible with all LLM frameworks and libraries?",

@@ -1,32 +1,60 @@
 # The Zero-Knowledge Difference
 
-Most secrets tools solve the wrong problem for AI agents. They secure credentials at rest, but the moment a credential is retrieved for use, that protection ends. AgentSecrets solves a different problem: keeping the value out of agent context entirely, not just storing it safely.
+In traditional cybersecurity, "zero-knowledge" means the cloud provider has no way to decrypt your data. While AgentSecrets enforces this server-side boundary, the unique threat model of AI agents requires a far more robust definition.
 
+For AgentSecrets, **Zero-Knowledge is holistic**: the plaintext credential value is structurally absent and completely invisible at every single point in the entire architecture—from the sync servers, to the local disk, to the AI agent’s process memory, and the application log traces.
 
-## The common pattern and why it fails
+---
 
-The standard approach to secrets management looks like this:
+## The Four Pillars of Holistic Zero-Knowledge
 
-```
-Secure store → agent retrieves sk_live_51H... → value enters agent memory
-                                               → prompt injection can reach it
-                                               → malicious plugin can read it
-                                               → LLM trace captures it
-                                               → log verbosity exposes it
-```
+AgentSecrets eliminates the plaintext credential value from the four major exposure points in modern AI and developer workflows:
 
-Whether the secure store is a `.env` file, HashiCorp Vault, AWS Secrets Manager, or a leasing system, if the agent retrieves the value, the value is in agent context. That is the moment of exposure, and it exists regardless of how well the credential was stored beforehand.
+### 1. Zero-Knowledge at the Server (Cloud Blindness)
+:::step
+Plaintext credential values **never leave your local machine**.
+* **Local-Only Decryption**: Symmetric encryption (AES-256-GCM) occurs client-side using a **Workspace Key** derived locally.
+* **Blind Coordinator**: The sync server only stores and routes base64-encoded ciphertext blobs. Because the server does not hold the Workspace Key, it is mathematically impossible for the server or any external adversary to decrypt your credentials.
+* **Sealed Asymmetric Sharing**: Teammates exchange access using zero-trust NaCl SealedBoxes (Curve25519). Decryption keys are decrypted only within the recipient's local environment.
+:::
 
-This is not a flaw in those tools. They were built for applications, not agents. Applications do exactly what their code says. An agent processing untrusted content can be instructed to do things its code never intended.
+### 2. Zero-Knowledge at the Agent (Runtime Context Decoupling)
+:::step
+Unlike legacy secrets managers, the AI agent **never holds or sees the plaintext credential value**.
+* **By-Reference Execution**: The agent process only ever references key names (e.g., `STRIPE_KEY` or `OPENAI_KEY`).
+* **Transport-Layer Injection**: The local proxy intercepts the outbound request, resolves the secret from the secure local keychain inside an isolated process space, injects it into the network payload, and immediately routes the request.
+* **RAM Protection**: The calling application's process memory and variable scope remain completely blind to the actual secret value, neutralising prompt injection and compromised dependencies.
+:::
 
-## Runtime retrieval vs transport-layer injection
+### 3. Zero-Knowledge at the Disk (Keychain Delegation)
+:::step
+Plaintext secrets are **never written to files**.
+* **Zero Plaintext Files**: Plaintext `.env` files are entirely eliminated.
+* **OS-Level Vaulting**: Secrets are stored in the operating system's native secure credential manager (macOS Keychain, Windows Credential Manager, or Linux Secret Service).
+* **Impersonation Prevention**: Access is guarded by the `keychain-auth` daemon, which cryptographically verifies the calling binary's hash before permitting secret resolution.
+:::
 
-**Runtime retrieval** — the common pattern:
+### 4. Zero-Knowledge in Logs and Observability (Active Redaction)
+:::step
+Raw values are **never recorded**.
+* **No Value Schema**: The audit log schema structurally lacks any field for credential values—it only tracks metadata (timestamps, key references, response codes).
+* **Automated Redaction**: If an upstream API reflects a key back in its response payload (such as in an error message), the proxy active-scans and redacts it (`[REDACTED_BY_AGENTSECRETS]`) before delivering the response to the agent, protecting downstream LLM traces and developer consoles.
+:::
+
+---
+
+## Runtime Retrieval vs. Transport-Layer Injection
+
+To understand the runtime zero-knowledge boundary, compare how credentials flow in standard setups versus AgentSecrets:
+
+### Runtime Retrieval (The Standard Model)
+
+In traditional systems, the application must fetch the raw value before using it:
 
 ```python
-# The agent fetches the credential value
-token = secrets_manager.get("STRIPE_KEY")
-# token is now "sk_live_51H..." — in memory, accessible, extractable
+# The application fetches the actual secret value into its RAM
+token = secrets_manager.get("STRIPE_KEY") 
+# token = "sk_live_51H..." (plaintext is now exposed in process memory!)
 
 response = requests.get(
     "https://api.stripe.com/v1/balance",
@@ -34,51 +62,35 @@ response = requests.get(
 )
 ```
 
-Once `token` holds the value, it can be accessed by any tool, plugin, or dependency running in the same process. It can be logged, extracted by prompt injection, or captured in an LLM trace.
+> [!WARNING]
+> Once `token` is in memory, it is accessible to any third-party dependency, can be logged, and is vulnerable to prompt injection if processed by an LLM.
 
-**Transport-layer injection** — the AgentSecrets model:
+### Transport-Layer Injection (The AgentSecrets Model)
+
+Under AgentSecrets, the agent passes a key reference; the actual value is injected dynamically at the network level:
 
 ```python
-# The agent passes a key name — never a value
+# The agent works strictly with key references
 response = client.call(
     "https://api.stripe.com/v1/balance",
     bearer="STRIPE_KEY"
 )
-# The proxy resolved the value, injected it, and returned the API response.
-# "sk_live_51H..." never existed in this process.
+# "sk_live_51H..." never existed in this application's process.
 ```
 
-The proxy receives the key name, resolves the value from the OS keychain in its own process, injects it directly into the outbound HTTP request at the transport layer, and returns only the API response. The value never crossed into the calling process.
+The plaintext value exists only within the milliseconds required to form the outbound request packet at the network boundary, ensuring total runtime isolation.
 
 ---
 
-## Why Secure Storage Is Not Enough
+## The Structural Guarantee
 
-Secure storage protects credentials from external attackers. Transport-layer injection protects credentials from the runtime environment itself, including the AI agent running inside it.
+AgentSecrets makes this zero-knowledge promise structural, rather than policy-based.
 
-The threat model for AI agents includes:
+A **policy-based guarantee** relies on discipline: *"We promise not to log your secrets,"* or *"We configured our tracing tools to ignore credentials."* These policies are fragile, prone to human error, and easily broken by a misplaced configuration line or a verbose debug mode.
 
-- **Prompt injection**: Malicious content in an email, document, or web page that instructs the agent to exfiltrate credentials.
-- **Malicious tools or plugins**: A dependency in the same process that reads memory or environment variables.
-- **LLM traces and observability tools**: Platforms that capture inputs and outputs for debugging, which may capture credential values passed as arguments.
-- **Verbose logging**: Debug modes that log function arguments, HTTP headers, or environment state.
+A **structural guarantee** is built into the architecture:
+* The SDK lacks any `.get_value()` function.
+* The backend database schema cannot accept plaintext.
+* The proxy automatically filters and replaces reflected values.
 
-None of these threats are addressed by secure storage alone. All of them are addressed by keeping the value out of agent context entirely.
-
----
-
-## Layered Defense-in-Depth via Subsystems
-
-To handle threats beyond raw credential exposure, AgentSecrets serves as an extensible host for specialized security subsystems:
-
-1. **Zero-Knowledge Core (AgentSecrets)**: Solves credential theft. Ensures the agent never holds the raw key bytes in memory.
-2. **Intent Attestation (SEC)**: Solves credential abuse. Hijacked agents cannot use credentials for arbitrary actions because they must present a cryptographically signed contract (Signed Execution Contract) pre-declaring their target domain and objective before touching untrusted data.
-3. **Capability Bounding (Keychain-Auth)**: Solves privilege escalation. Restricts local OS keychain queries to authorized binary processes, preventing rogue scripts from extracting workspace credentials.
-
----
-
-## The Architectural Guarantee
-
-AgentSecrets makes the zero-knowledge guarantee structural, not policy-based.
-
-A policy-based guarantee says "we do not log credential values." The system could log them; whether it does depends on configuration and discipline. A structural guarantee means the audit log schema has no value field, the SDK has no `get()` method, and the proxy returns only the API response. You cannot accidentally break this guarantee by misconfiguring something because the architecture has no path for the value to travel anywhere it should not be.
+Because the system is architected without a pathway for plaintext values to travel, it is physically impossible to leak them—even by accident.

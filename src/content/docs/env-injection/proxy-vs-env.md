@@ -49,6 +49,6 @@ Use `agentsecrets env` when:
 
 Use the local proxy or SDK when:
 
-1. **Deploying autonomous AI agents**: Any agent that processes user-generated queries, handles files, or uses tools dynamically.
+1. **Running autonomous AI agents**: Any agent that processes user-generated queries, handles files, or uses tools dynamically.
 2. **Handling untrusted code or plugins**: If your application loads third-party plugins, packages, or LLM-assisted runtimes.
 3. **Enforcing network egress policies**: Restricting outgoing requests to allowed domains, preventing compromised packages from exfiltrating data.

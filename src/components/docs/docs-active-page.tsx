@@ -10,18 +10,7 @@ import { useGSAP } from "@gsap/react";
 import { DOCS_SECTIONS } from "@/lib/docs-sections";
 import { Frown, Meh, Smile } from "lucide-react";
 
-function Breadcrumb({ items }: { items: string[] }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: "var(--muted)", marginBottom: 28, flexWrap: "wrap" }}>
-      {items.map((item, i) => (
-        <span key={i} style={{ color: i === items.length - 1 ? "var(--em)" : "var(--muted)" }}>
-          {i > 0 && <span style={{ marginRight: 8, color: "var(--muted)" }}>›</span>}
-          {item}
-        </span>
-      ))}
-    </div>
-  );
-}
+
 
 interface DocsActivePageProps {
   activeId: string;
@@ -193,6 +182,11 @@ export default function DocsActivePage({ activeId, content }: DocsActivePageProp
   const prev = currentIndex > 0 ? DOCS_SECTIONS[currentIndex - 1] : null;
   const next = currentIndex < DOCS_SECTIONS.length - 1 ? DOCS_SECTIONS[currentIndex + 1] : null;
 
+  // Memoize the MarkdownRenderer element to prevent re-renders on scroll
+  const renderedMarkdown = useMemo(() => (
+    <MarkdownRenderer content={content} id={activeId} />
+  ), [content, activeId]);
+
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: `
@@ -294,8 +288,12 @@ export default function DocsActivePage({ activeId, content }: DocsActivePageProp
         >
           <div style={{ width: "100%", maxWidth: "680px" }}>
             <div key={activeId} className="docs-section animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <Breadcrumb items={[DOCS_SECTIONS.find(s => s.id === activeId)?.group || "Docs", activeLabel]} />
-              <MarkdownRenderer content={content} id={activeId} />
+              <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11, color: "var(--muted)", marginBottom: 28, flexWrap: "wrap" }}>
+                <span>{DOCS_SECTIONS.find(s => s.id === activeId)?.group || "Docs"}</span>
+                <span style={{ marginRight: 4, color: "var(--muted)" }}>›</span>
+                <span style={{ color: "var(--em)" }}>{activeLabel}</span>
+              </div>
+              {renderedMarkdown}
             </div>
 
             {/* Pagination Navigation */}

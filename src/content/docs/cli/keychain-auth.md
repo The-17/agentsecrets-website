@@ -1,38 +1,56 @@
 ---
-title: "Keychain Auth Integration"
-description: "How AgentSecrets integrates with the operating system keychain to securely persist authentication state without relying on plaintext files."
+title: "keychain-auth Subsystem"
+description: "How the keychain-auth daemon secures the operating system keychain against process impersonation and rogue scripts."
 ---
 
-# Keychain Auth Integration
+# keychain-auth Subsystem
 
-Starting with **v2.0.0**, `agentsecrets` integrates directly with your operating system's native keychain (such as macOS Keychain, Windows Credential Manager, or Linux Secret Service) to securely persist your authentication tokens.
+The `keychain-auth` daemon is the capability-bounding security subsystem of AgentSecrets. Rather than just acting as a bridge to the operating system's native keychain (such as macOS Keychain, Windows Credential Manager, or Linux Secret Service), it enforces strict **Process Identity Verification** and **Anti-Impersonation**.
 
-## Why Keychain Auth?
+---
 
-Before v2.0.0, authentication tokens might be stored in a plaintext configuration file (e.g., `~/.config/agentsecrets/auth.json`). While convenient, this meant any process running as your user could read the token.
+## The Security Problem it Solves
 
-By moving to a keychain-based approach:
-- **Tokens are encrypted at rest** by the OS.
-- **Access is managed** by the OS (e.g., prompting for your password if a new binary requests access).
-- **No plaintext credentials** exist on disk.
+In standard secrets managers, keychain access is wide open to any process running under your user session. If a user is logged in, any random shell script, third-party dependency, or rogue tool can invoke the secrets CLI or query the keychain directly to retrieve raw values.
+
+AgentSecrets blocks this vector structurally via `keychain-auth`:
+- **Cryptographic Binary Validation**: Before resolving any credential from the OS keychain, the `keychain-auth` daemon validates the cryptographic hash and executable path of the calling CLI binary.
+- **Rogue Script Prevention**: If a malicious script attempts to call `agentsecrets secrets list` or impersonate the CLI, the daemon detects the hash mismatch and denies the request immediately.
+- **Isolated Process Space**: All cryptographic decryption operations are isolated inside the daemon's RAM, completely hidden from other running processes.
+
+---
 
 ## How It Works
 
-When you run `agentsecrets login`:
-1. The CLI authenticates you with the AgentSecrets cloud.
-2. The returned authentication token is handed to a background daemon (`keychain-auth`).
-3. The daemon securely stores the token in the OS keychain.
-4. Subsequent commands (like `agentsecrets env` or `agentsecrets push`) communicate with this daemon via a secure Unix domain socket (or named pipe on Windows) to retrieve the token temporarily in memory.
+Every credential request is guarded by a multi-stage validation handshake:
 
-## Platforms Supported
+1. **Request Interception**: The AgentSecrets CLI or proxy daemon requests key resolution.
+2. **Process Hash Attestation**: The request is routed to `keychain-auth` via a secure, local Unix domain socket (or named pipe on Windows).
+3. **Identity Verification**: The daemon checks the caller's process ID (PID), traces the execution path back to the disk binary, and compares its cryptographic signature and hash against authorized records.
+4. **Key Decryption**: Only if the binary identity is validated does the daemon fetch the encrypted Workspace Key, decrypt the requested secret locally, and inject it temporarily at the transport boundary.
 
-- **macOS**: Apple Keychain
-- **Windows**: Windows Credential Manager
-- **Linux**: Secret Service API (GNOME Keyring, KWallet), or an encrypted fallback if no Secret Service is available.
+---
+
+## Supported Keychain Backends
+
+AgentSecrets leverages native OS cryptographic storage APIs:
+- **macOS**: Apple Keychain Service
+- **Windows**: Windows Credential Manager & Data Protection API (DPAPI)
+- **Linux**: Secret Service API (GNOME Keyring / KWallet) with a fallback to local, client-side encrypted storage if no graphical keyring is available.
+
+---
 
 ## Troubleshooting
 
-If you encounter a `401 Unauthorized` or experience issues with the keychain-auth daemon:
-1. Try running `agentsecrets login` again to refresh the token and re-initialize the daemon.
-2. Ensure you have the necessary OS permissions for the keychain (e.g., unlocked GNOME keyring on Linux).
-3. If the daemon process is hung, you can manually kill the `keychain-auth` process and run `agentsecrets login` to restart it.
+If you experience connection errors or handshake failures with the `keychain-auth` daemon:
+
+1. **Verify Daemon Status**: Check if the background service is running:
+   ```bash
+   agentsecrets proxy status
+   ```
+2. **Restart the Subsystem**: If the daemon hangs or permissions change, restart it to re-initialize the socket connections:
+   ```bash
+   agentsecrets proxy stop
+   agentsecrets proxy start
+   ```
+3. **Unlock Keyring (Linux)**: On headless Linux or CI environments, ensure your GNOME Keyring is unlocked, or set the environment storage mode to use local client-side encrypted vaults.

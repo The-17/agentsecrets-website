@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build:search": "npx tsx scripts/generate-search-index.ts",
-    "build": "npm run build:search && next build",
+    "build:search": "bun scripts/generate-search-index.ts",
+    "build": "bun run build:search && next build",
     "start": "next start",
     "lint": "eslint"
   },

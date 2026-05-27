@@ -427,13 +427,20 @@ export default function DocsPage() {
       const headingElements = mainContainer.querySelectorAll("h2, h3");
       let currentId = "";
       
-      headingElements.forEach((el: any) => {
-        const rect = el.getBoundingClientRect();
-        // Adjust threshold based on layout (top nav + padding)
-        if (rect.top <= 220) {
-          currentId = el.id;
-        }
-      });
+      // Check if we are at the bottom of the scroll container
+      const isAtBottom = mainContainer.scrollHeight - mainContainer.scrollTop <= mainContainer.clientHeight + 10;
+      
+      if (isAtBottom && headingElements.length > 0) {
+        currentId = headingElements[headingElements.length - 1].id;
+      } else {
+        headingElements.forEach((el: any) => {
+          const rect = el.getBoundingClientRect();
+          // Adjust threshold based on layout (top nav + padding)
+          if (rect.top <= 220) {
+            currentId = el.id;
+          }
+        });
+      }
       
       if (currentId && currentId !== activeHeadingRef.current) {
         setActiveHeading(currentId);
@@ -450,12 +457,21 @@ export default function DocsPage() {
   // Sync TOC scroll with active heading
   useEffect(() => {
     if (!activeHeading || !tocRef.current) return;
-    const activeLink = tocRef.current.querySelector(`a[href="#${activeHeading}"]`);
+    const activeLink = tocRef.current.querySelector(`a[href="#${activeHeading}"]`) as HTMLElement;
     if (activeLink) {
-      activeLink.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-      });
+      const container = tocRef.current;
+      const containerRect = container.getBoundingClientRect();
+      const linkRect = activeLink.getBoundingClientRect();
+      
+      const relativeTop = linkRect.top - containerRect.top + container.scrollTop;
+      const relativeBottom = relativeTop + linkRect.height;
+      
+      if (relativeTop < container.scrollTop || relativeBottom > (container.scrollTop + containerRect.height)) {
+        container.scrollTo({
+          top: relativeTop - (containerRect.height / 2) + (linkRect.height / 2),
+          behavior: "smooth"
+        });
+      }
     }
   }, [activeHeading]);
 

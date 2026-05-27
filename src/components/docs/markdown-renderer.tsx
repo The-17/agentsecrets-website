@@ -29,16 +29,23 @@ if (typeof window !== "undefined") {
   });
 }
 
+const mermaidCache: Record<string, string> = {};
+
 const Mermaid = ({ chart }: { chart: string }) => {
-  const [svg, setSvg] = useState<string>("");
+  const [svg, setSvg] = useState<string>(mermaidCache[chart] || "");
 
   useEffect(() => {
+    if (mermaidCache[chart]) return;
+    
     let isMounted = true;
     const renderChart = async () => {
       try {
         const id = `mermaid-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         const { svg } = await mermaid.render(id, chart);
-        if (isMounted) setSvg(svg);
+        if (isMounted) {
+          mermaidCache[chart] = svg;
+          setSvg(svg);
+        }
       } catch (err) {
         console.error("Mermaid rendering failed", err);
       }
@@ -465,7 +472,25 @@ export default function MarkdownRenderer({ content, id: sectionId }: { content: 
         .markdown-body table { width: 100%; border-collapse: collapse; margin: 0; }
         .markdown-body th { padding: 14px 20px; font-size: 12px; font-weight: 600; color: #666; text-align: left; border-bottom: 1px solid rgba(0,0,0,0.08); background: #FAFAFA; }
         .markdown-body td { padding: 16px 20px; font-size: 14px; vertical-align: top; border-bottom: 1px solid rgba(0,0,0,0.04); color: #444; }
-        .markdown-body th:first-child, .markdown-body td:first-child { min-width: 160px; white-space: nowrap; font-family: var(--font-mono); font-weight: 500; color: #1B1B1B; }
+        .markdown-body th:first-child, .markdown-body td:first-child { min-width: 120px; font-weight: 600; color: #1B1B1B; }
+        /* 4-column table balancing */
+        .markdown-body th:first-child:nth-last-child(4),
+        .markdown-body td:first-child:nth-last-child(4) {
+          width: 22%;
+          min-width: 120px;
+        }
+        .markdown-body th:first-child:nth-last-child(4) ~ th:nth-child(2),
+        .markdown-body td:first-child:nth-last-child(4) ~ td:nth-child(2) {
+          width: 18%;
+        }
+        .markdown-body th:first-child:nth-last-child(4) ~ th:nth-child(3),
+        .markdown-body td:first-child:nth-last-child(4) ~ td:nth-child(3) {
+          width: 25%;
+        }
+        .markdown-body th:first-child:nth-last-child(4) ~ th:nth-child(4),
+        .markdown-body td:first-child:nth-last-child(4) ~ td:nth-child(4) {
+          width: 35%;
+        }
         .markdown-body hr { border: none; height: 1px; background: rgba(0,0,0,0.06); margin: 40px 0; }
         .markdown-body .step-heading { display: flex; align-items: center; gap: 12px; scroll-margin-top: 100px; margin-bottom: 8px !important; }
         .markdown-body .step-heading .step-number { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.15); font-size: 13px; font-weight: 500; color: #666; flex-shrink: 0; font-variant-numeric: tabular-nums; }

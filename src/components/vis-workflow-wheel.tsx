@@ -48,51 +48,84 @@ const CIRCLE_ITEMS = WORKFLOW_STEPS;
    ───────────────────────────────────────────── */
 function MobileWorkflow() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [stepProgress, setStepProgress] = useState(0);
   const containerRef = useRef<HTMLElement>(null);
+  const pillRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const pillsContainerRef = useRef<HTMLDivElement>(null);
 
   useGSAP(() => {
     if (!containerRef.current) return;
-    gsap.from('.mobile-wf-label', {
-      opacity: 0,
-      y: 20,
-      duration: 1,
-      ease: 'power2.out',
-      scrollTrigger: {
+
+    let mm = gsap.matchMedia();
+
+    mm.add("(max-width: 767px)", () => {
+      // Track scroll progress of the container without pinning
+      ScrollTrigger.create({
+        id: 'mobile-workflow-trigger',
         trigger: containerRef.current,
-        start: 'top 80%',
-        toggleActions: 'play none none reverse',
-      }
+        start: 'top 70%',
+        end: 'bottom 30%',
+        scrub: true,
+        onUpdate: (self) => {
+          const p = self.progress;
+          const totalSteps = WORKFLOW_STEPS.length;
+          const index = Math.min(
+            Math.floor(p * totalSteps),
+            totalSteps - 1
+          );
+          setActiveIndex(index);
+          
+          const stepSize = 1 / totalSteps;
+          const progressInStep = (p - index * stepSize) / stepSize;
+          const clamped = Math.max(0, Math.min(1, progressInStep));
+          setStepProgress(clamped * 100);
+        }
+      });
     });
-    gsap.from('.mobile-wf-step', {
-      opacity: 0,
-      y: 30,
-      stagger: 0.08,
-      duration: 1,
-      ease: 'expo.out',
-      scrollTrigger: {
-        trigger: containerRef.current,
-        start: 'top 75%',
-        toggleActions: 'play none none reverse',
-      }
-    });
+
+    return () => mm.revert();
   }, { scope: containerRef });
 
-  // Auto-advance every 4 seconds
   useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveIndex(prev => (prev + 1) % WORKFLOW_STEPS.length);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
+    const container = pillsContainerRef.current;
+    const pill = pillRefs.current[activeIndex];
+    if (container && pill) {
+      const containerWidth = container.offsetWidth;
+      const pillWidth = pill.offsetWidth;
+      const pillLeft = pill.offsetLeft;
+      
+      // Center the pill in the horizontal scrolling container
+      const scrollTarget = pillLeft - (containerWidth / 2) + (pillWidth / 2);
+      
+      container.scrollTo({
+        left: scrollTarget,
+        behavior: 'smooth'
+      });
+    }
+  }, [activeIndex]);
+
+  const handlePillClick = (i: number) => {
+    const trigger = ScrollTrigger.getById('mobile-workflow-trigger');
+    if (trigger) {
+      const start = trigger.start;
+      const end = trigger.end;
+      const stepSize = 1 / WORKFLOW_STEPS.length;
+      const progress = (i + 0.5) * stepSize;
+      const scrollPos = start + progress * (end - start);
+      window.scrollTo({ top: scrollPos, behavior: 'smooth' });
+    } else {
+      setActiveIndex(i);
+    }
+  };
 
   return (
     <section
       ref={containerRef}
-      className="w-full md:hidden"
-      style={{ backgroundColor: '#0D1512', color: '#FFFFFF', padding: '80px 24px' }}
+      className="w-full md:hidden select-none"
+      style={{ backgroundColor: '#0D1512', color: '#FFFFFF', padding: '160px 24px' }}
     >
       {/* Section Label */}
-      <div className="mobile-wf-label text-center mb-12">
+      <div className="mobile-wf-label text-center" style={{ marginBottom: '100px' }}>
         <span className="text-[10px] font-bold tracking-[0.15em] uppercase text-[#34D399]/60 block mb-4">
           WORKFLOW
         </span>
@@ -103,11 +136,15 @@ function MobileWorkflow() {
       </div>
 
       {/* Step Labels — horizontal scroll pills */}
-      <div className="flex gap-2 overflow-x-auto pb-4 mb-8 -mx-2 px-2 scrollbar-hide">
+      <div 
+        ref={pillsContainerRef}
+        className="flex gap-2 overflow-x-auto pb-4 mb-16 -mx-2 px-2 scrollbar-hide"
+      >
         {WORKFLOW_STEPS.map((step, i) => (
           <button
             key={i}
-            onClick={() => setActiveIndex(i)}
+            ref={el => { pillRefs.current[i] = el; }}
+            onClick={() => handlePillClick(i)}
             className="mobile-wf-step shrink-0 px-4 py-2 rounded-full text-[12px] font-medium transition-all duration-300 whitespace-nowrap"
             style={{
               background: activeIndex === i ? 'rgba(52, 211, 153, 0.15)' : 'rgba(255,255,255,0.05)',
@@ -120,23 +157,25 @@ function MobileWorkflow() {
         ))}
       </div>
 
-      {/* Active Step Content — terminal card */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeIndex}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="rounded-2xl overflow-hidden"
-          style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.06)',
-          }}
-        >
-          <div className="px-5 py-5">
+      {/* Active Step Content — terminal card with fixed height to prevent layout shift */}
+      <div
+        className="rounded-2xl overflow-hidden flex flex-col justify-between"
+        style={{
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(255,255,255,0.06)',
+        }}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeIndex}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="px-6 py-8"
+          >
             {/* Step Number + Label */}
-            <div className="flex items-center gap-3 mb-5">
+            <div className="flex items-center gap-3 mb-6">
               <span
                 className="flex items-center justify-center w-[24px] h-[24px] rounded-full text-[11px] font-bold"
                 style={{
@@ -151,32 +190,35 @@ function MobileWorkflow() {
               </span>
             </div>
 
-            {/* Terminal */}
-            <div className="font-mono text-[12px] leading-relaxed">
-              <div className="text-[#34D399] mb-2 font-medium break-all">
+            {/* Terminal Container with fixed height to prevent layout shift */}
+            <div className="font-mono text-[12px] leading-relaxed min-h-[130px] flex flex-col justify-start">
+              <div className="text-[#34D399] mb-4 font-medium whitespace-nowrap overflow-x-auto scrollbar-hide">
                 {WORKFLOW_STEPS[activeIndex].cmd}
               </div>
               <div className="text-white/60 whitespace-pre-wrap break-all">
                 {WORKFLOW_STEPS[activeIndex].output}
               </div>
             </div>
-          </div>
+          </motion.div>
+        </AnimatePresence>
 
-          {/* Progress bar */}
-          <div className="h-[2px] bg-white/5">
-            <motion.div
-              key={`progress-${activeIndex}`}
-              className="h-full bg-[#34D399]/40"
-              initial={{ width: '0%' }}
-              animate={{ width: '100%' }}
-              transition={{ duration: 4, ease: 'linear' }}
-            />
-          </div>
-        </motion.div>
-      </AnimatePresence>
+        {/* Progress bar */}
+        <div className="h-[2px] bg-white/5 w-full">
+          <div
+            className="h-full bg-[#34D399]/40"
+            style={{ 
+              width: `${stepProgress}%`,
+              transition: 'width 0.05s ease-out'
+            }}
+          />
+        </div>
+      </div>
 
       {/* Footnote */}
-      <p className="text-[12px] text-white/30 text-center mt-8 leading-relaxed max-w-[300px] mx-auto">
+      <p 
+        className="text-[12px] text-white/30 text-center leading-relaxed max-w-[300px] mx-auto"
+        style={{ marginTop: '80px' }}
+      >
         The agent managed the complete workflow autonomously. No credential value appeared at any step.
       </p>
     </section>
@@ -197,131 +239,136 @@ function DesktopWorkflow() {
   useGSAP(() => {
     if (!containerRef.current || !wrapperRef.current) return;
 
-    if (glow1Ref.current) {
-      gsap.to(glow1Ref.current, {
-        yPercent: 10,
-        xPercent: 5,
-        scale: 1.1,
-        duration: 8,
-        repeat: -1,
-        yoyo: true,
-        ease: 'sine.inOut'
-      });
-    }
-    if (glow2Ref.current) {
-      gsap.to(glow2Ref.current, {
-        yPercent: -15,
-        xPercent: -10,
-        scale: 1.2,
-        duration: 11,
-        repeat: -1,
-        yoyo: true,
-        ease: 'sine.inOut',
-        delay: 2
-      });
-    }
+    let mm = gsap.matchMedia();
 
-    let radius = window.innerHeight * 0.9; 
-    let centerX = (window.innerWidth * 0.10) - radius;
-
-    gsap.set(wrapperRef.current, { left: centerX, top: '50%' });
-
-    const updateItemsPosition = (scrollProgress: number) => {
-      const spacing = Math.PI / 18; 
-      const maxRotation = (CIRCLE_ITEMS.length - 1) * spacing;
-
-      let closestIndex = 0;
-      let minDistance = Infinity;
-
-      CIRCLE_ITEMS.forEach((_, index) => {
-        const item = itemsRef.current[index];
-        if (!item) return;
-
-        const angle = (index * spacing) - (scrollProgress * maxRotation);
-        
-        const x = Math.cos(angle) * radius;
-        const y = Math.sin(angle) * radius;
-        const rotation = (angle * 180) / Math.PI;
-
-        const distanceToZero = Math.abs(angle);
-
-        if (distanceToZero < minDistance) {
-          minDistance = distanceToZero;
-          closestIndex = index;
-        }
-
-        let opacity = 0;
-        let color = '#FFFFFF';
-        let textShadow = 'none';
-
-        const isAbove = angle < 0;
-        const targetLowOpacity = isAbove ? 0.35 : 0.08;
-
-        if (distanceToZero < 0.05) {
-          opacity = 1;
-          const depthProgress = distanceToZero / 0.05;
-          const blurAmount = Math.round((1 - depthProgress) * 25);
-          const alphaAmount = (1 - depthProgress) * 0.6;
-          textShadow = `0 0 ${blurAmount}px rgba(255,255,255,${alphaAmount})`;
-        } else if (distanceToZero < 0.15) {
-          const dropProgress = (distanceToZero - 0.05) / 0.10;
-          opacity = 1 - (dropProgress * (1 - targetLowOpacity)); 
-        } else if (distanceToZero < 0.8) {
-          const fadeProgress = (distanceToZero - 0.15) / 0.65;
-          opacity = targetLowOpacity * (1 - fadeProgress);
-        } else {
-          opacity = 0;
-        }
-
-        gsap.set(item, {
-          x,
-          y,
-          xPercent: 0, 
-          yPercent: -50,
-          rotation,
-          opacity,
-          color,
-          textShadow,
-          transformOrigin: "left center",
+    mm.add("(min-width: 768px)", () => {
+      if (glow1Ref.current) {
+        gsap.to(glow1Ref.current, {
+          yPercent: 10,
+          xPercent: 5,
+          scale: 1.1,
+          duration: 8,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut'
         });
-      });
+      }
+      if (glow2Ref.current) {
+        gsap.to(glow2Ref.current, {
+          yPercent: -15,
+          xPercent: -10,
+          scale: 1.2,
+          duration: 11,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+          delay: 2
+        });
+      }
 
-      WORKFLOW_STEPS.forEach((_, i) => {
-        if (contentRefs.current[i]) {
-          const isActive = i === closestIndex;
-          gsap.set(contentRefs.current[i], {
-            opacity: isActive ? 1 : 0,
-            y: isActive ? 0 : 20,
-            pointerEvents: isActive ? 'auto' : 'none',
+      let radius = window.innerHeight * 0.9; 
+      let centerX = (window.innerWidth * 0.10) - radius;
+
+      gsap.set(wrapperRef.current, { left: centerX, top: '50%' });
+
+      const updateItemsPosition = (scrollProgress: number) => {
+        const spacing = Math.PI / 18; 
+        const maxRotation = (CIRCLE_ITEMS.length - 1) * spacing;
+
+        let closestIndex = 0;
+        let minDistance = Infinity;
+
+        CIRCLE_ITEMS.forEach((_, index) => {
+          const item = itemsRef.current[index];
+          if (!item) return;
+
+          const angle = (index * spacing) - (scrollProgress * maxRotation);
+          
+          const x = Math.cos(angle) * radius;
+          const y = Math.sin(angle) * radius;
+          const rotation = (angle * 180) / Math.PI;
+
+          const distanceToZero = Math.abs(angle);
+
+          if (distanceToZero < minDistance) {
+            minDistance = distanceToZero;
+            closestIndex = index;
+          }
+
+          let opacity = 0;
+          let color = '#FFFFFF';
+          let textShadow = 'none';
+
+          const isAbove = angle < 0;
+          const targetLowOpacity = isAbove ? 0.35 : 0.08;
+
+          if (distanceToZero < 0.05) {
+            opacity = 1;
+            const depthProgress = distanceToZero / 0.05;
+            const blurAmount = Math.round((1 - depthProgress) * 25);
+            const alphaAmount = (1 - depthProgress) * 0.6;
+            textShadow = `0 0 ${blurAmount}px rgba(255,255,255,${alphaAmount})`;
+          } else if (distanceToZero < 0.15) {
+            const dropProgress = (distanceToZero - 0.05) / 0.10;
+            opacity = 1 - (dropProgress * (1 - targetLowOpacity)); 
+          } else if (distanceToZero < 0.8) {
+            const fadeProgress = (distanceToZero - 0.15) / 0.65;
+            opacity = targetLowOpacity * (1 - fadeProgress);
+          } else {
+            opacity = 0;
+          }
+
+          gsap.set(item, {
+            x,
+            y,
+            xPercent: 0, 
+            yPercent: -50,
+            rotation,
+            opacity,
+            color,
+            textShadow,
+            transformOrigin: "left center",
           });
-        }
+        });
+
+        WORKFLOW_STEPS.forEach((_, i) => {
+          if (contentRefs.current[i]) {
+            const isActive = i === closestIndex;
+            gsap.set(contentRefs.current[i], {
+              opacity: isActive ? 1 : 0,
+              y: isActive ? 0 : 20,
+              pointerEvents: isActive ? 'auto' : 'none',
+            });
+          }
+        });
+      };
+
+      updateItemsPosition(0);
+
+      ScrollTrigger.create({
+        trigger: containerRef.current,
+        start: 'top top',
+        end: '+=300%',
+        pin: true,
+        pinSpacing: true,
+        scrub: 1,
+        onUpdate: (self) => {
+          const animationProgress = Math.min(self.progress / 0.66, 1);
+          updateItemsPosition(animationProgress);
+        },
       });
-    };
 
-    updateItemsPosition(0);
-
-    ScrollTrigger.create({
-      trigger: containerRef.current,
-      start: 'top top',
-      end: '+=300%',
-      pin: true,
-      pinSpacing: false,
-      scrub: 1,
-      onUpdate: (self) => {
-        const animationProgress = Math.min(self.progress / 0.66, 1);
-        updateItemsPosition(animationProgress);
-      },
+      const handleResize = () => {
+        radius = window.innerHeight * 0.9;
+        centerX = (window.innerWidth * 0.10) - radius;
+        gsap.set(wrapperRef.current, { left: centerX });
+        ScrollTrigger.update();
+      };
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
     });
 
-    const handleResize = () => {
-      radius = window.innerHeight * 0.9;
-      centerX = (window.innerWidth * 0.10) - radius;
-      gsap.set(wrapperRef.current, { left: centerX });
-      ScrollTrigger.update();
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-
+    return () => mm.revert();
   }, { scope: containerRef });
 
   return (

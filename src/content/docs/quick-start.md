@@ -122,7 +122,7 @@ Before making any proxy calls, tell AgentSecrets which API domains your project 
 agentsecrets workspace allowlist add api.stripe.com api.github.com 
 ```
 
-# Verify
+**Verify:**
 ```bash
 agentsecrets workspace allowlist list
 ```
@@ -171,12 +171,12 @@ curl http://localhost:8765/proxy \
 agentsecrets proxy start
 ```
 
-# Check status
+**Check status:**
 ```bash
 agentsecrets proxy status
 ```
 
-# Stop when done
+**Stop when done:**
 ```bash
 agentsecrets proxy stop
 ```

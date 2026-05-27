@@ -13,6 +13,7 @@ gsap.registerPlugin(ScrollTrigger, SplitText);
 
 export default function StatsSection() {
   const [githubStars, setGithubStars] = useState("0");
+  const [metricsLoaded, setMetricsLoaded] = useState(false);
   const [metrics, setMetrics] = useState({
     total_secrets: 0,
     total_projects: 0,
@@ -57,6 +58,7 @@ export default function StatsSection() {
               (d.feature_adoption?.environment_distribution?.production ?? 0) +
               (d.feature_adoption?.environment_distribution?.development ?? 0)
           });
+          setMetricsLoaded(true);
         }
       })
       .catch(() => {});
@@ -155,7 +157,7 @@ export default function StatsSection() {
       )
     },
     {
-      value: formatMetric((metrics.total_proxy_calls || 0) < 1000 ? 1000 + (metrics.total_proxy_calls || 0) : metrics.total_proxy_calls),
+      value: metricsLoaded ? formatMetric(1000 + (metrics.total_proxy_calls || 0)) : "0",
       label: "Requests Proxied",
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

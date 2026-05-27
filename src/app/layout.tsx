@@ -49,25 +49,32 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: 'AgentSecrets — Zero-Knowledge Credential Infrastructure for AI Agents',
+  title: 'AgentSecrets — Zero-Knowledge Credential Infrastructure for AI Agents & Teams',
   description:
-    'Stop exposing credentials to LLMs. AgentSecrets is a zero-knowledge credential infrastructure that lets AI agents call any API by reference, without ever holding raw key values in memory.',
+    'The standard secure credential layer for AI agents, coding assistants (Cursor, Claude), and engineering teams. Call APIs by reference without raw keys in memory. 10-second setup.',
   keywords: [
-    'AI credential infrastructure',
-    'secure credential orchestration for AI agents',
-    'zero-knowledge secrets storage',
-    'credential management for LLMs',
-    'Claude MCP secrets',
-    'API key proxy for AI',
-    'prevent prompt injection key theft',
-    'agent security architecture',
-    'Zero-Knowledge MCP Server',
-    'OS Keychain credential infrastructure',
+    'AI agents secrets management',
+    'secrets infrastructure for AI',
+    'agentic secrets infrastructure',
+    'credentials infrastructure for agents',
+    'AI agent credential security',
+    'AI secrets manager',
+    'zero-knowledge API key manager',
+    'secrets manager for Cursor and Claude',
+    'secure credentials for AI agents',
+    'MCP server secrets storage',
+    'protect Cursor from env file theft',
+    'team credential sharing zero-knowledge',
+    'prevent prompt injection key exposure',
+    'API key proxy for LLM workflows',
+    'OS keychain credential manager',
+    'agentic credential proxy',
+    'AI developer secrets security',
   ],
   openGraph: {
-    title: 'AgentSecrets — Zero-Knowledge Credential Infrastructure for AI Agents',
+    title: 'AgentSecrets — Zero-Knowledge Credential Infrastructure for AI Agents & Teams',
     description:
-      'Keep your API keys completely hidden from AI models and LLM agents. Zero-knowledge local credentials proxy with domain egress protection.',
+      'The standard secure credential layer for AI agents, coding assistants (Cursor, Claude), and engineering teams. API keys remain hidden. 10-second setup.',
     url: 'https://agentsecrets.theseventeen.co',
     siteName: 'AgentSecrets',
     images: [
@@ -83,9 +90,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'AgentSecrets — Keep API Keys Hidden from AI Agents',
+    title: 'AgentSecrets — Zero-Knowledge Credentials for AI & Teams',
     description:
-      'Stop pasting secrets into AI chats. Give your AI agents API access without sharing your credentials. Zero-knowledge proxy.',
+      'Stop pasting secrets into AI tools. Protect your environments. Zero-knowledge credential proxy with 10-second setup.',
     images: ['https://agentsecrets.theseventeen.co/Logo.png'],
   },
   alternates: {

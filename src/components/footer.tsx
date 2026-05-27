@@ -83,9 +83,9 @@ export default function Footer() {
         </div>
 
         {/* Baseline Row */}
-        <div className="mt-24 flex flex-col md:flex-row items-center justify-between w-full text-[13px] font-medium tracking-tight">
+        <div className="mt-24 flex flex-col md:flex-row items-start md:items-center justify-between w-full text-[13px] font-medium tracking-tight">
           <p className="text-[#1B1B1B]/40">© 2026 Agent Secrets. All rights reserved.</p>
-          <div className="flex items-center gap-1.5 mt-4 md:mt-0">
+          <div className="flex items-center gap-1.5 mt-4 md:mt-0 md:min-w-[160px]">
             <span className="text-[#1B1B1B]/30">built by</span>
             <a 
               href="https://theseventeen.co" 

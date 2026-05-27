@@ -135,6 +135,7 @@ export const DOCS_SECTIONS = [
   { id: "security/cloud-sync", group: "Security", label: "Zero-Knowledge Sync" },
   { id: "security/proxy-layers", group: "Security", label: "Proxy Security Layers" },
   { id: "security/threat-model", group: "Security", label: "Threat Model" },
+  { id: "security/owasp-mitigation", group: "Security", label: "OWASP Top 10 Mitigation" },
   { id: "security/faq", group: "Security", label: "Security FAQ" },
   { id: "security/audit-status", group: "Security", label: "Third-Party Audit" },
   { id: "security/reporting", group: "Security", label: "Reporting Vulnerabilities" },
@@ -174,6 +175,7 @@ export const DOCS_SECTIONS = [
   { id: "faq", group: "FAQ", label: "Frequently Asked Questions" },
 
   // Changelog
+  { id: "changelog/v2-0-0", group: "Changelog", label: "v2.0.0" },
   { id: "changelog/v1-4-0", group: "Changelog", label: "v1.4.0" },
   { id: "changelog/v1-3-0", group: "Changelog", label: "v1.3.x" },
   { id: "changelog/v1-2-0", group: "Changelog", label: "v1.2.0" },

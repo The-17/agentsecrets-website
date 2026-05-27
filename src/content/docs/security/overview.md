@@ -41,6 +41,7 @@ To understand specific parts of our security implementation, explore the dedicat
 - **[Proxy Security Layers](/docs/security/proxy-layers)**: Explore the TLS interception, domain allowlists, and response body redaction architecture.
 - **[Binary Anti-Impersonation](/docs/security/anti-impersonation)**: Understand how the `keychain-auth` daemon protects against local malicious scripts.
 - **[Threat Model](/docs/security/threat-model)**: A formal analysis of threat actors, assets, and attack vectors.
+- **[OWASP Top 10 Mitigation](/docs/security/owasp-mitigation)**: A mapping of how AgentSecrets protects agents against critical OWASP security risks.
 - **[Third-Party Audit Status](/docs/security/audit-status)**: Details on our upcoming and current cryptographic audits.
 - **[Reporting Vulnerabilities](/docs/security/reporting)**: Our SLA and policy for responsible vulnerability disclosure.
 - **[Security FAQ](/docs/security/faq)**: Answers to architectural security questions.

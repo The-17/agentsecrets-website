@@ -88,7 +88,7 @@ export default function ModelSection() {
           </p>
           <br />
           <p>
-            AgentSecrets is a zero-knowledge credential infrastructure built for the AI-agent era. It secures the full lifecycle of credential usage — storing, syncing across environments and teams, detecting drift, and auditing every call — while ensuring the credential value itself never enters the agent's context. Whether you are shipping an autonomous agent or building with an AI coding assistant, the agent uses credentials it was never given. The work gets done. The value was never there to take.
+            AgentSecrets is a zero-knowledge credential infrastructure built for the AI-agent era. It secures the full lifecycle of credential usage — storing, syncing across environments and teams, detecting drift, and auditing every call — while ensuring the credential value itself never enters the agent's context. Whether you are shipping an autonomous agent or building with an AI coding assistant, the agent uses credentials it was never given.
           </p>
         </div>
 

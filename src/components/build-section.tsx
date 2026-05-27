@@ -15,15 +15,16 @@ const BUILD_CATEGORIES = [
   {
     id: "01",
     label: "SDKs & TOOLS",
-    header: "Build with native speed",
-    summary: "Integrate AgentSecrets directly into your application logic using our native libraries.",
+    header: "Integrate at the runtime layer",
+    summary: "Integrate AgentSecrets directly into your application logic using our client libraries.",
     items: [
       {
         id: "sdk-python",
         title: "Native Python\nSDK",
-        description: "Write zero-knowledge tools and agent workflows using our Python client. The SDK routes outbound API calls through the local proxy, keeping credential values out of process memory.",
+        description: "One import, zero rewrites. The SDK transparently monkey-patches `requests` and `httpx` so every outbound call is automatically routed through the local proxy — credential values never touch your process memory.",
         icon: <Blocks size={48} strokeWidth={1.5} />,
         cta: "Get Started",
+        href: "/docs/sdk",
         status: "active"
       },
       {
@@ -40,7 +41,7 @@ const BUILD_CATEGORIES = [
     id: "02",
     label: "ECOSYSTEM",
     header: "Built on Agent Secrets",
-    summary: "Explore tools and platforms built on top of our secure identity layer.",
+    summary: "Explore tools and platforms built on top of our secure credentials infrastructure.",
     items: [
       {
         id: "mcp",
@@ -55,6 +56,7 @@ const BUILD_CATEGORIES = [
           </svg>
         ),
         cta: "Explore MCP",
+        href: "/docs/ecosystem/zk-mcp",
         status: "active"
       },
       {
@@ -141,7 +143,7 @@ export default function BuildSection() {
             </div>
             <div className="max-w-[380px]">
               <p className="text-[16px] md:text-[18px] text-[#1B1B1B]/50 leading-relaxed lg:text-right">
-                Use Agent Secrets as the base, then extend it to build the secure credentials layer your product needs.
+                Use Agent Secrets as the base, then extend it to build the secure credentials infrastructure your product needs.
               </p>
             </div>
           </div>
@@ -228,17 +230,31 @@ export default function BuildSection() {
                             >
                               {item.description}
                             </motion.p>
-                            <motion.button 
-                              className={`group flex items-center gap-2 w-fit px-4 py-2 rounded-full text-[12px] font-bold tracking-tight transition-all ${
-                                isHovered 
-                                  ? 'bg-[#0d9488]/10 text-[#0d9488]' 
-                                  : 'bg-[#F5F5F7] text-[#1B1B1B]/60'
-                              }`}
-                              style={{ pointerEvents: item.status === "upcoming" ? 'none' : 'auto' }}
-                            >
-                              {item.cta}
-                              {item.status === "active" && <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />}
-                            </motion.button>
+                            {item.status === "active" && item.href ? (
+                              <a href={item.href}>
+                                <motion.button 
+                                  className={`group flex items-center gap-2 w-fit px-4 py-2 rounded-full text-[12px] font-bold tracking-tight transition-all ${
+                                    isHovered 
+                                      ? 'bg-[#0d9488]/10 text-[#0d9488]' 
+                                      : 'bg-[#F5F5F7] text-[#1B1B1B]/60'
+                                  }`}
+                                >
+                                  {item.cta}
+                                  <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                                </motion.button>
+                              </a>
+                            ) : (
+                              <motion.button 
+                                className={`group flex items-center gap-2 w-fit px-4 py-2 rounded-full text-[12px] font-bold tracking-tight transition-all ${
+                                  isHovered 
+                                    ? 'bg-[#0d9488]/10 text-[#0d9488]' 
+                                    : 'bg-[#F5F5F7] text-[#1B1B1B]/60'
+                                }`}
+                                style={{ pointerEvents: 'none' }}
+                              >
+                                {item.cta}
+                              </motion.button>
+                            )}
                           </motion.div>
                         </div>
                       );
