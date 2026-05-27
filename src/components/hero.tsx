@@ -134,23 +134,23 @@ export default function Hero() {
         </div>
 
         {/* Headline Container */}
-        <h1 className='text-[clamp(30px,3.4vw,44px)] font-bold leading-[1.15] tracking-[-0.02em] text-[#1B1B1B] max-w-[840px]'>
+        <h1 className='text-[clamp(30px,3.4vw,44px)] font-bold leading-[1.15] tracking-[-0.02em] text-[#1B1B1B] max-w-[920px]'>
           
           {/* Main Headline — word-by-word wave animation */}
           <span 
             ref={headlineRef}
             className='block overflow-hidden'
           >
-            Zero-Knowledge Secrets for AI Agents:
+            Zero-Knowledge Credential Infrastructure for AI Agents
           </span>
           
           {/* Subtext Headline — smooth fade up */}
           <span 
             ref={subtextRef}
-            className='block pt-1'
+            className='block pt-3 text-[clamp(15px,1.5vw,19px)] font-normal text-[#4A4A4A] leading-[1.4]'
             style={{ opacity: 0 }}
           >
-            Secure secret access &amp; management without exposing values at any step.
+            Secure, extensible credential orchestration for autonomous systems, teams, and human workflows — powered by Signed Execution Contracts and OS-isolated capability bounding.
           </span>
 
         </h1>

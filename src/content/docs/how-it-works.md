@@ -68,52 +68,64 @@ flowchart TB
 
 ## The Proxy Call Lifecycle
 
-The local AgentSecrets proxy intercepts outgoing requests and injects the resolved credentials right before they hit the wire.
+The local AgentSecrets proxy intercepts outgoing requests, validates them against the active SEC contract and target allowlists, and injects resolved credentials right before they hit the wire.
 
 ```mermaid
 sequenceDiagram
     autonumber
     participant Agent as AI Agent (Context)
     participant Proxy as Local Proxy (localhost:8765)
+    participant SEC as SEC Engine
     participant Keychain as OS Keychain
     participant Target as Upstream API (e.g., Stripe)
     
-    Agent->>Proxy: Outbound Request (bearer="STRIPE_KEY")
+    Agent->>Proxy: Outbound Request (bearer="STRIPE_KEY", SEC_CONTRACT_TOKEN)
     Note over Proxy: Step 1: Intercept Request
     
-    Note over Proxy: Step 2: Validate Target Domain against Allowlist
-    alt Domain NOT Allowlisted
+    Proxy->>SEC: Step 2: Validate Signed Execution Contract (verify --token SEC_TOKEN --action ACTION)
+    alt SEC Validation Fails
+        SEC-->>Proxy: Exit 1 or 2 (Error or Policy Violation)
+        Proxy-->>Agent: HTTP 403 Forbidden (Blocked)
+    end
+    SEC-->>Proxy: Exit 0 (Approved)
+    
+    Note over Proxy: Step 3: Check Domain Allowlist
+    alt Domain not allowlisted
         Proxy-->>Agent: HTTP 403 Forbidden (Blocked)
     end
     
-    Proxy->>Keychain: Step 3: Fetch secret value securely
+    Proxy->>Keychain: Step 4: Fetch secret value securely (via Keychain-Auth)
+    Note over Keychain: Verify process signature & capability bounds
     Keychain-->>Proxy: Return plaintext value ("sk_live_...")
     
-    Note over Proxy: Step 4: Inject value into transport headers
+    Note over Proxy: Step 5: Inject value into transport headers
     Proxy->>Target: Outbound HTTPS (Header: Authorization: Bearer sk_live_...)
     Target-->>Proxy: HTTP Response Payload
     
-    Note over Proxy: Step 5: Redact any reflected key value in response
+    Note over Proxy: Step 6: Redact any reflected key value in response
     Proxy-->>Agent: Clean API Response
-    Note over Proxy: Log audit metadata (Timestamp, Agent Token, Domain)
+    Note over Proxy: Log audit metadata (Timestamp, Agent Token, Domain, SEC Provenance)
 ```
 
 ### Step 1: Request Interception
 The AI agent or application sends an outbound HTTP/HTTPS request, pointing authorization headers or request bodies to a placeholder key name (e.g. `bearer="STRIPE_KEY"`). The proxy daemon (running locally at `localhost:8765`) intercepts this request.
 
-### Step 2: Pre-Execution Allowlist Check
-Before resolving any credentials or performing cryptographic operations, the proxy checks the target host against the active workspace domain allowlist. If the domain is not authorized, the proxy aborts the execution with a `403 Forbidden`, logs the blocked attempt, and stops. This prevents prompt injections from exfiltrating credentials to external hacker-controlled servers.
+### Step 2: Signed Execution Contract (SEC) Attestation
+If a contract token is active (passed in the request headers, environment variable `SEC_CONTRACT_TOKEN`, or session context), the proxy invokes the SEC engine to verify the cryptographic contract against the attempted action. The SEC engine deterministically checks timing invariants, JTI replay status, and allowlist glob patterns. If the contract check fails or has expired, the proxy rejects the request immediately.
 
-### Step 3: Local Decryption
-The proxy locates the workspace key, environment context, and key name in the local OS keychain. It decrypts the secret value inside the proxy daemon's private memory space. The decrypted value is never written to disk, output to standard streams, or returned to the calling agent process.
+### Step 3: Pre-Execution Allowlist Check
+As an additional safety net, the target host is checked against the active workspace domain allowlist. If the domain is not authorized, the proxy aborts the execution with a `403 Forbidden`, logs the blocked attempt, and stops. This prevents prompt injections from exfiltrating credentials to external hacker-controlled servers.
 
-### Step 4: Transport-Layer Injection
+### Step 4: Local Decryption and Anti-Impersonation
+The proxy locates the workspace key, environment context, and key name. It queries the background `keychain-auth` daemon. The daemon verifies the cryptographic hash of the calling proxy process to ensure no unauthorized process is attempting to fetch secrets. Once approved, it decrypts the secret value inside the proxy daemon's private memory space. The decrypted value is never written to disk, output to standard streams, or returned to the calling agent process.
+
+### Step 5: Transport-Layer Injection
 The decrypted credential is substituted into the request payload at the network layer. Depending on the configured injection style, it is placed in headers (e.g., `Authorization: Bearer`), URL query parameters, or JSON body fields. The request is then securely forwarded to the upstream API using TLS.
 
-### Step 5: Response Scanning and Redaction
+### Step 6: Response Scanning and Redaction
 Once the upstream API returns a response, the proxy scans the body. If the upstream service reflects the API key back in the payload (often found in error logs or debug fields), the proxy redacts it, replacing the token with `[REDACTED_BY_AGENTSECRETS]`.
 
-Finally, the proxy logs the metadata of the call (timestamp, requesting agent token, environment, endpoint, response status, duration) to the local audit log. No credential values are ever saved in the logs. The redacted response is then handed to the calling agent code.
+Finally, the proxy logs the metadata of the call (timestamp, requesting agent token, environment, endpoint, response status, duration, and SEC contract provenance if present) to the local audit log. No credential values are ever saved in the logs. The redacted response is then handed to the calling agent code.
 
 ---
 

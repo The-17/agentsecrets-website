@@ -52,23 +52,33 @@ The proxy receives the key name, resolves the value from the OS keychain in its 
 
 ---
 
-## Why secure storage is not enough
+## Why Secure Storage Is Not Enough
 
 Secure storage protects credentials from external attackers. Transport-layer injection protects credentials from the runtime environment itself, including the AI agent running inside it.
 
 The threat model for AI agents includes:
 
-- **Prompt injection**: malicious content in an email, document, or web page that instructs the agent to exfiltrate credentials
-- **Malicious tools or plugins**: a dependency in the same process that reads memory or environment variables
-- **LLM traces and observability tools**: platforms that capture inputs and outputs for debugging, which may capture credential values passed as arguments
-- **Verbose logging**: debug modes that log function arguments, HTTP headers, or environment state
+- **Prompt injection**: Malicious content in an email, document, or web page that instructs the agent to exfiltrate credentials.
+- **Malicious tools or plugins**: A dependency in the same process that reads memory or environment variables.
+- **LLM traces and observability tools**: Platforms that capture inputs and outputs for debugging, which may capture credential values passed as arguments.
+- **Verbose logging**: Debug modes that log function arguments, HTTP headers, or environment state.
 
 None of these threats are addressed by secure storage alone. All of them are addressed by keeping the value out of agent context entirely.
 
 ---
 
-## The architectural guarantee
+## Layered Defense-in-Depth via Subsystems
+
+To handle threats beyond raw credential exposure, AgentSecrets serves as an extensible host for specialized security subsystems:
+
+1. **Zero-Knowledge Core (AgentSecrets)**: Solves credential theft. Ensures the agent never holds the raw key bytes in memory.
+2. **Intent Attestation (SEC)**: Solves credential abuse. Hijacked agents cannot use credentials for arbitrary actions because they must present a cryptographically signed contract (Signed Execution Contract) pre-declaring their target domain and objective before touching untrusted data.
+3. **Capability Bounding (Keychain-Auth)**: Solves privilege escalation. Restricts local OS keychain queries to authorized binary processes, preventing rogue scripts from extracting workspace credentials.
+
+---
+
+## The Architectural Guarantee
 
 AgentSecrets makes the zero-knowledge guarantee structural, not policy-based.
 
-A policy-based guarantee says "we do not log credential values." The system could log them. Whether it does depends on configuration and discipline. A structural guarantee means the audit log schema has no value field, the SDK has no `get()` method, and the proxy returns only the API response. You cannot accidentally break this guarantee by misconfiguring something because the architecture has no path for the value to travel anywhere it should not be.
+A policy-based guarantee says "we do not log credential values." The system could log them; whether it does depends on configuration and discipline. A structural guarantee means the audit log schema has no value field, the SDK has no `get()` method, and the proxy returns only the API response. You cannot accidentally break this guarantee by misconfiguring something because the architecture has no path for the value to travel anywhere it should not be.

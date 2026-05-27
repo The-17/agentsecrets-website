@@ -7,7 +7,12 @@ Find detailed answers to common questions about AgentSecrets, zero-knowledge sec
 ### What is AgentSecrets and how does it differ from traditional secrets managers like HashiCorp Vault or Doppler?
 Traditional secrets managers are built around secure storage and retrieval. They assume that the application environment fetching the secret is trusted. The application queries the vault, pulls the plaintext credential (e.g., `sk_live_...`) into its own memory space, and uses it.
 
-AgentSecrets is a zero-knowledge credential orchestrator. Rather than retrieving keys into application memory, AgentSecrets decouples credentials from the application runtime entirely. The calling process only holds placeholder key references (like `STRIPE_KEY`), and a local proxy intercepts network traffic to inject the credentials at the transport layer right before the request hits the network interface. Credentials never enter the memory, logs, or context of your code.
+AgentSecrets is a zero-knowledge credential infrastructure. Rather than retrieving keys into application memory, AgentSecrets decouples credentials from the application runtime entirely. The calling process only holds placeholder key references (like `STRIPE_KEY`), and a local proxy intercepts network traffic to inject the credentials at the transport layer right before the request hits the network interface. Credentials never enter the memory, logs, or context of your code.
+
+Furthermore, AgentSecrets acts as an extensible security host where specialized subsystems plug in to provide composable security guarantees:
+- **Zero-Knowledge Core (AgentSecrets)**: Keeps credential values out of agent context, traces, and logs.
+- **Intent Attestation (SEC)**: Restricts credential usage to cryptographically signed contracts pre-declaring natural-language objectives and target URL glob patterns.
+- **Capability Bounding (Keychain-Auth)**: Uses process-level validation to block unauthorized local scripts or processes from accessing keychain entries.
 
 ### How does AgentSecrets enforce the principle of least privilege for AI agents?
 AI agents are dynamic and interpret untrusted inputs (e.g., processing web scraping payloads, reading emails, or executing user-provided commands), making them vulnerable to prompt injection and data exfiltration.
